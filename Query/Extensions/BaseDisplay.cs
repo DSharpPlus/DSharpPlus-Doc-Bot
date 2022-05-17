@@ -130,7 +130,8 @@ namespace DSharpPlusDocs.Query
 
         public static bool IsInherited(object o) => o is PropertyInfoWrapper property
                 ? $"{property.Parent.TypeInfo.Namespace}.{property.Parent.TypeInfo.Name}" != $"{property.Property.DeclaringType.Namespace}.{property.Property.DeclaringType.Name}"
-                : o is MethodInfoWrapper method && $"{method.Parent.TypeInfo.Namespace}.{method.Parent.TypeInfo.Name}" != $"{method.Method.DeclaringType.Namespace}.{method.Method.DeclaringType.Name}";
+                : o is MethodInfoWrapper method
+                && $"{method.Parent.TypeInfo.Namespace}.{method.Parent.TypeInfo.Name}" != $"{method.Method.DeclaringType.Namespace}.{method.Method.DeclaringType.Name}";
 
         private static List<string> GetPaths(IEnumerable<object> list) => list.Select(x => GetPath(x)).ToList();
 

@@ -1,0 +1,8 @@
+version: "3.9"
+
+services:
+  tomoe:
+    build: .
+    environment:
+      - "DISCORD_TOKEN": ""
+    restart: unless-stopped

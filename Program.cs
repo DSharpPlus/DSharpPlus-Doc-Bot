@@ -25,9 +25,6 @@ namespace DSharpPlusDocs
 {
     public class Program
     {
-        public static void Main()
-        {
-            new DSharpPlusDocs().RunAsync().GetAwaiter().GetResult();
-        }
+        public static void Main() => new DSharpPlusDocs().RunAsync().GetAwaiter().GetResult();
     }
 }

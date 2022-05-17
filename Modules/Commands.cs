@@ -41,13 +41,15 @@ using Microsoft.CodeAnalysis.CSharp.Scripting;
 using Microsoft.CodeAnalysis.Scripting;
 using Microsoft.Extensions.DependencyInjection;
 
+#pragma warning disable CA1822 // Mark members as static
+
 namespace DSharpPlusDocs.Modules
 {
     public class GeneralCommands : BaseCommandModule
     {
         [Command("clean")]
         [Description("Delete all the messages from this bot within the last X messages")]
-        public static async Task CleanAsync(CommandContext ctx, int messages = 30)
+        public async Task CleanAsync(CommandContext ctx, int messages = 30)
         {
             if (messages > 50)
             {
@@ -68,16 +70,16 @@ namespace DSharpPlusDocs.Modules
 
         [Command("docs")]
         [Description("Show the docs url")]
-        public static async Task DocsAsync(CommandContext ctx) => await ctx.RespondAsync($"Docs: {QueryHandler.DocsBaseUrl}");
+        public async Task DocsAsync(CommandContext ctx) => await ctx.RespondAsync($"Docs: {QueryHandler.DocsBaseUrl}");
 
         [Command("invite")]
         [Description("Show the invite url")]
-        public static async Task InviteAsync(CommandContext ctx) => await ctx.RespondAsync("Invite: https://discordapp.com/oauth2/authorize?client_id=341606460720939008&scope=bot");
+        public async Task InviteAsync(CommandContext ctx) => await ctx.RespondAsync("Invite: https://discordapp.com/oauth2/authorize?client_id=341606460720939008&scope=bot");
 
         [Command("guides")]
         [Aliases("guide")]
         [Description("Show the url of a guide")]
-        public static async Task GuidesAsync(CommandContext ctx, [RemainingText] string guide = null)
+        public async Task GuidesAsync(CommandContext ctx, [RemainingText] string guide = null)
         {
             try
             {
@@ -202,7 +204,7 @@ namespace DSharpPlusDocs.Modules
 
         [Command("info")]
         [Description("Show some information about the application")]
-        public static async Task InfoAsync(CommandContext ctx)
+        public async Task InfoAsync(CommandContext ctx)
         {
             _ = ctx.Client.CurrentApplication;
             MainHandler mainHandler = ctx.Services.GetService<MainHandler>();
@@ -244,7 +246,7 @@ namespace DSharpPlusDocs.Modules
 
         [Command("eval")] //TODO: Safe eval ? 👀
         [RequireOwner]
-        public static async Task EvalAsync(CommandContext ctx, [RemainingText] string code)
+        public async Task EvalAsync(CommandContext ctx, [RemainingText] string code)
         {
             /*using (Context.Channel.EnterTypingState())
             {*/
@@ -278,7 +280,7 @@ namespace DSharpPlusDocs.Modules
 
         [Command("setdocsurl")]
         [RequireOwner]
-        public static async Task SetDocsUrlAsync(CommandContext ctx, [RemainingText] string url)
+        public async Task SetDocsUrlAsync(CommandContext ctx, [RemainingText] string url)
         {
             if (!url.EndsWith("/"))
             {
