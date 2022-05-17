@@ -35,5 +35,5 @@ jobs:
           file: ./Dockerfile
           push: true
           tags: |
-            ghcr.io/dsharpplus/dsharpplusdocs:latest
-            ghcr.io/dsharpplus/dsharpplusdocs:${{ steps.previoustag.outputs.tag }}
+            ghcr.io/dsharpplus/dsharpplus-doc-bot:latest
+            ghcr.io/dsharpplus/dsharpplus-doc-bot:${{ steps.previoustag.outputs.tag }}
