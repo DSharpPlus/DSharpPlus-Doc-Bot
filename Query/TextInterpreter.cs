@@ -29,7 +29,7 @@ namespace DSharpPlusDocs.Query
 {
     public class TextInterpreter
     {
-        private static readonly Regex rgx = new Regex("[^0-9a-z_ ]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ECMAScript);
+        private static readonly Regex rgx = new("[^0-9a-z_ ]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ECMAScript);
 
         private string _text;
         public TextInterpreter(string text) => _text = $" {text} ";
@@ -38,65 +38,65 @@ namespace DSharpPlusDocs.Query
         {
             //TODO: Better text parsing
             bool searchTypes = true, searchMethods = true, searchProperties = true, searchEvents = true, isList = false;
-            SearchType search = SearchType.NONE;
+            SearchType search = SearchType.None;
             if (_text.IndexOf(" type ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" method ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" property ", StringComparison.OrdinalIgnoreCase) != -1 || _text.IndexOf(" event ", StringComparison.OrdinalIgnoreCase) != -1)
             {
-                if (_text.IndexOf(" type ", StringComparison.OrdinalIgnoreCase) == -1)
+                if (!_text.Contains(" type ", StringComparison.OrdinalIgnoreCase))
                 {
                     searchTypes = false;
                 }
 
-                if (_text.IndexOf(" method ", StringComparison.OrdinalIgnoreCase) == -1)
+                if (!_text.Contains(" method ", StringComparison.OrdinalIgnoreCase))
                 {
                     searchMethods = false;
                 }
 
-                if (_text.IndexOf(" property ", StringComparison.OrdinalIgnoreCase) == -1)
+                if (!_text.Contains(" property ", StringComparison.OrdinalIgnoreCase))
                 {
                     searchProperties = false;
                 }
 
-                if (_text.IndexOf(" event ", StringComparison.OrdinalIgnoreCase) == -1)
+                if (!_text.Contains(" event ", StringComparison.OrdinalIgnoreCase))
                 {
                     searchEvents = false;
                 }
 
-                Regex rgx = new Regex("( property | method | type | event )", RegexOptions.IgnoreCase);
+                Regex rgx = new("( property | method | type | event )", RegexOptions.IgnoreCase);
                 _text = rgx.Replace(_text, " ");
             }
             if (_text.IndexOf(" list ", StringComparison.OrdinalIgnoreCase) != -1)
             {
                 isList = true;
-                Regex rgx = new Regex("( list )", RegexOptions.IgnoreCase);
+                Regex rgx = new("( list )", RegexOptions.IgnoreCase);
                 _text = rgx.Replace(_text, " ");
             }
             string nspace = null;
             int idx;
             if ((idx = _text.IndexOf(" in ", StringComparison.OrdinalIgnoreCase)) != -1)
             {
-                search = SearchType.JUST_NAMESPACE;
+                search = SearchType.JustNamespace;
                 idx += 4;
-                nspace = _text.Substring(idx);
+                nspace = _text[idx..];
                 int idx2;
                 if ((idx2 = nspace.IndexOf(' ')) != -1)
                 {
-                    nspace = nspace.Substring(0, idx2);
+                    nspace = nspace[..idx2];
                 }
 
                 _text = _text.Replace($" in {nspace}", " ");
             }
-            if (_text.Contains(".") && idx == -1)
+            if (_text.Contains('.') && idx == -1)
             {
-                if (search == SearchType.JUST_NAMESPACE)
+                if (search == SearchType.JustNamespace)
                 {
                     return new InterpreterResult("You can't use both \"in\" and \".\" (dot) keywords.");
                 }
 
-                nspace = _text.Substring(0, _text.LastIndexOf('.'));
+                nspace = _text[.._text.LastIndexOf('.')];
                 int lidx;
                 if ((lidx = nspace.LastIndexOf(' ')) != -1)
                 {
-                    nspace = nspace.Substring(lidx);
+                    nspace = nspace[lidx..];
                 }
 
                 _text = _text.Replace($"{nspace}.", "");

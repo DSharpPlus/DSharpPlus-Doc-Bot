@@ -26,10 +26,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
-using DSharpPlusDocs.Github;
 using DSharpPlusDocs.Handlers;
 using DSharpPlusDocs.Query.Results;
 using DSharpPlusDocs.Query.Wrappers;
+using DSharpPlusDocs.Rest;
 
 namespace DSharpPlusDocs.Query
 {
@@ -68,7 +68,7 @@ namespace DSharpPlusDocs.Query
             }
 
             CacheBag cb = _cache.GetCacheBag(first);
-            if (cb.Methods.Count != 0)
+            if (!cb.Methods.IsEmpty)
             {
                 int i = 1;
                 IEnumerable<System.Reflection.MethodInfo> methods = cb.Methods.RandomShuffle().Take(3);
@@ -77,7 +77,7 @@ namespace DSharpPlusDocs.Query
                     string.Join("\n", methods.Select(y => $"``{i++}-``{(IsInherited(new MethodInfoWrapper(first, y)) ? " (i)" : "")} {y.Name}(...)")),
                     true);
             }
-            if (cb.Properties.Count != 0)
+            if (!cb.Properties.IsEmpty)
             {
                 int i = 1;
                 IEnumerable<System.Reflection.PropertyInfo> properties = cb.Properties.RandomShuffle().Take(3);

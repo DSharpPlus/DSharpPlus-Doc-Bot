@@ -64,7 +64,7 @@ namespace DSharpPlusDocs.Modules
             int i = 0;
             foreach (CommandOverload overload in command.Overloads)
             {
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
 
                 foreach (CommandArgument arg in overload.Arguments)
                 {
@@ -115,7 +115,7 @@ namespace DSharpPlusDocs.Modules
             int idx;
             if ((idx = typeName.IndexOf('`')) != -1)
             {
-                typeName = typeName.Substring(0, idx);
+                typeName = typeName[..idx];
                 Type[] generics = type.GetGenericArguments();
                 if (generics.Any())
                 {
@@ -125,19 +125,13 @@ namespace DSharpPlusDocs.Modules
             return GetTypeName(type, typeName, typeGeneric);
         }
 
-        private static string GetTypeName(Type type, string name, string generic)
-        {
-            if (Nullable.GetUnderlyingType(type) != null)
-            {
-                return $"{generic}?";
-            }
-
-            return type.IsByRef
+        private static string GetTypeName(Type type, string name, string generic) => Nullable.GetUnderlyingType(type) != null
+                ? $"{generic}?"
+                : type.IsByRef
                 ? BuildType(type.GetElementType())
                 : Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{(string.IsNullOrEmpty(generic) ? "" : $"<{generic}>")}";
-        }
 
-        private static readonly Dictionary<Type, string> Aliases = new Dictionary<Type, string>()
+        private static readonly Dictionary<Type, string> Aliases = new()
         {
             { typeof(byte), "byte" },
             { typeof(sbyte), "sbyte" },
@@ -176,7 +170,7 @@ namespace DSharpPlusDocs.Modules
             string desc = "";
             if (_name != null)
             {
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 sb.Append(Formatter.InlineCode(_name))
                     .Append(": ")
                     .Append(string.IsNullOrWhiteSpace(_desc) ? "No description provided." : _desc);

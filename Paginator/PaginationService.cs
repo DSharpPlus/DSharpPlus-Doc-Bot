@@ -40,7 +40,7 @@ namespace DSharpPlusDocs.Paginator
         {
             _messages = new Dictionary<ulong, PaginatedMessage>();
             _client = client;
-            _client.MessageReactionAdded += OnReactionAdded;
+            _client.MessageReactionAdded += OnReactionAddedAsync;
         }
 
         /// <summary>
@@ -148,7 +148,7 @@ namespace DSharpPlusDocs.Paginator
             }
         }
 
-        internal async Task OnReactionAdded(DiscordClient client, MessageReactionAddEventArgs e)
+        internal async Task OnReactionAddedAsync(DiscordClient client, MessageReactionAddEventArgs e)
         {
             DiscordMessage message = e.Message;
             if (message == null)
@@ -225,11 +225,11 @@ namespace DSharpPlusDocs.Paginator
         }
         public PaginatedMessage(IEnumerable<Page> pages, string title = "", int embedColor = 0, DiscordUser user = null, AppearanceOptions options = null)
         {
-            List<DiscordEmbed> embeds = new List<DiscordEmbed>();
+            List<DiscordEmbed> embeds = new();
             int i = 1;
             foreach (Page page in pages)
             {
-                DiscordEmbedBuilder builder = new DiscordEmbedBuilder
+                DiscordEmbedBuilder builder = new()
                 {
                     Color = new DiscordColor(embedColor),
                     Title = title,

@@ -26,10 +26,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
-using DSharpPlusDocs.Github;
 using DSharpPlusDocs.Handlers;
 using DSharpPlusDocs.Query.Results;
 using DSharpPlusDocs.Query.Wrappers;
+using DSharpPlusDocs.Rest;
 
 namespace DSharpPlusDocs.Query
 {
@@ -71,9 +71,9 @@ namespace DSharpPlusDocs.Query
             return eb;
         }
 
-        private string EventToDocs(EventInfoWrapper ei) => $"#{ei.Parent.TypeInfo.Namespace.Replace('.', '_')}_{ei.Parent.TypeInfo.Name}_{ei.Event.Name}";
+        private static string EventToDocs(EventInfoWrapper ei) => $"#{ei.Parent.TypeInfo.Namespace.Replace('.', '_')}_{ei.Parent.TypeInfo.Name}_{ei.Event.Name}";
 
-        private string BuildEvent(EventInfoWrapper ev)
+        private static string BuildEvent(EventInfoWrapper ev)
         {
             IEnumerable<Type> par = ev.Event.EventHandlerType.GenericTypeArguments;
             par = par.Take(par.Count() - 1);

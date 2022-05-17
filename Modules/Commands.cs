@@ -47,7 +47,7 @@ namespace DSharpPlusDocs.Modules
     {
         [Command("clean")]
         [Description("Delete all the messages from this bot within the last X messages")]
-        public async Task Clean(CommandContext ctx, int messages = 30)
+        public static async Task CleanAsync(CommandContext ctx, int messages = 30)
         {
             if (messages > 50)
             {
@@ -68,21 +68,21 @@ namespace DSharpPlusDocs.Modules
 
         [Command("docs")]
         [Description("Show the docs url")]
-        public async Task Docs(CommandContext ctx) => await ctx.RespondAsync($"Docs: {QueryHandler.DocsBaseUrl}");
+        public static async Task DocsAsync(CommandContext ctx) => await ctx.RespondAsync($"Docs: {QueryHandler.DocsBaseUrl}");
 
         [Command("invite")]
         [Description("Show the invite url")]
-        public async Task Invite(CommandContext ctx) => await ctx.RespondAsync("Invite: https://discordapp.com/oauth2/authorize?client_id=341606460720939008&scope=bot");
+        public static async Task InviteAsync(CommandContext ctx) => await ctx.RespondAsync("Invite: https://discordapp.com/oauth2/authorize?client_id=341606460720939008&scope=bot");
 
         [Command("guides")]
         [Aliases("guide")]
         [Description("Show the url of a guide")]
-        public async Task Guides(CommandContext ctx, [RemainingText] string guide = null)
+        public static async Task GuidesAsync(CommandContext ctx, [RemainingText] string guide = null)
         {
             try
             {
                 string html;
-                using (HttpClient httpClient = new HttpClient())
+                using (HttpClient httpClient = new())
                 {
                     HttpResponseMessage res = await httpClient.GetAsync("https://raw.githubusercontent.com/NaamloosDT/DSharpPlus/master/docs/articles/toc.yml");
                     if (!res.IsSuccessStatusCode)
@@ -92,8 +92,8 @@ namespace DSharpPlusDocs.Modules
 
                     html = await res.Content.ReadAsStringAsync();
                 }
-                Dictionary<string, string> guides = new Dictionary<string, string>();
-                Dictionary<string, Dictionary<string, string>> subguides = new Dictionary<string, Dictionary<string, string>>();
+                Dictionary<string, string> guides = new();
+                Dictionary<string, Dictionary<string, string>> subguides = new();
                 string[] separate = html.Split(new[] { "\n" }, StringSplitOptions.RemoveEmptyEntries);
                 string lastname = "";
                 for (int i = 0; i < separate.Length; i++)
@@ -113,15 +113,15 @@ namespace DSharpPlusDocs.Modules
                         string link = line.Split(new[] { "href:" }, StringSplitOptions.None)[1].Trim();
                         if (separate[i].StartsWith("   ")) //TODO: Change how to find subgroups
                         {
-                            subguides.Last().Value[lastname] = $"{link.Substring(0, link.Length - 2)}html";
+                            subguides.Last().Value[lastname] = $"{link[..^2]}html";
                         }
                         else
                         {
-                            guides[lastname] = $"{link.Substring(0, link.Length - 2)}html";
+                            guides[lastname] = $"{link[..^2]}html";
                         }
                     }
                 }
-                StringBuilder sb = new StringBuilder();
+                StringBuilder sb = new();
                 string authorName = null, authorUrl = null;
                 if (string.IsNullOrEmpty(guide))
                 {
@@ -191,7 +191,7 @@ namespace DSharpPlusDocs.Modules
                 }
                 else
                 {
-                    DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+                    DiscordEmbedBuilder eb = new();
                     eb.WithAuthor(authorName, authorUrl);
                     eb.WithDescription(result);
                     await ctx.RespondAsync("", embed: eb);
@@ -202,11 +202,11 @@ namespace DSharpPlusDocs.Modules
 
         [Command("info")]
         [Description("Show some information about the application")]
-        public async Task Info(CommandContext ctx)
+        public static async Task InfoAsync(CommandContext ctx)
         {
-            DiscordApplication application = ctx.Client.CurrentApplication;
+            _ = ctx.Client.CurrentApplication;
             MainHandler mainHandler = ctx.Services.GetService<MainHandler>();
-            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            DiscordEmbedBuilder eb = new();
             string name;
             if (ctx.Guild != null)
             {
@@ -225,7 +225,7 @@ namespace DSharpPlusDocs.Modules
                 $"- Library: DSharpPlus ({ctx.Client.VersionString})\n" +
                     $"- Runtime: {RuntimeInformation.FrameworkDescription} {RuntimeInformation.ProcessArchitecture}\n" +
                     //$"- Source: https://github.com/SubZero0/DiscordNet-Docs\n" +
-                    $"- Uptime: {(DateTime.Now - Process.GetCurrentProcess().StartTime).ToString(@"dd\.hh\:mm\:ss")}",
+                    $"- Uptime: {DateTime.Now - Process.GetCurrentProcess().StartTime:dd\\.hh\\:mm\\:ss}",
                 false);
             eb.AddField(
                 "Docs",
@@ -244,13 +244,13 @@ namespace DSharpPlusDocs.Modules
 
         [Command("eval")] //TODO: Safe eval ? 👀
         [RequireOwner]
-        public async Task Eval(CommandContext ctx, [RemainingText] string code)
+        public static async Task EvalAsync(CommandContext ctx, [RemainingText] string code)
         {
             /*using (Context.Channel.EnterTypingState())
             {*/
             try
             {
-                List<MetadataReference> references = new List<MetadataReference>();
+                List<MetadataReference> references = new();
                 AssemblyName[] referencedAssemblies = Assembly.GetEntryAssembly().GetReferencedAssemblies();
                 foreach (AssemblyName referencedAssembly in referencedAssemblies)
                 {
@@ -258,7 +258,7 @@ namespace DSharpPlusDocs.Modules
                 }
 
                 ScriptOptions scriptoptions = ScriptOptions.Default.WithReferences(references);
-                Globals globals = new Globals { Context = ctx };
+                Globals globals = new() { Context = ctx };
                 object o = await CSharpScript.EvaluateAsync(@"using System;using System.Linq;using System.Threading.Tasks;using DSharpPlus;" + @code, scriptoptions, globals);
                 if (o == null)
                 {
@@ -271,18 +271,18 @@ namespace DSharpPlusDocs.Modules
             }
             catch (Exception e)
             {
-                await ctx.RespondAsync("", embed: new DiscordEmbedBuilder().WithTitle("Error:").WithDescription($"{e.GetType().ToString()}: {e.Message}\nFrom: {e.Source}"));
+                await ctx.RespondAsync("", embed: new DiscordEmbedBuilder().WithTitle("Error:").WithDescription($"{e.GetType()}: {e.Message}\nFrom: {e.Source}"));
             }
             //}
         }
 
         [Command("setdocsurl")]
         [RequireOwner]
-        public async Task SetDocsUrl(CommandContext ctx, [RemainingText] string url)
+        public static async Task SetDocsUrlAsync(CommandContext ctx, [RemainingText] string url)
         {
             if (!url.EndsWith("/"))
             {
-                url = url + "/";
+                url += "/";
             }
 
             QueryHandler.DocsBaseUrl = url;

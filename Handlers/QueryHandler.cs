@@ -44,9 +44,9 @@ namespace DSharpPlusDocs.Handlers
                 return ($"{interpreterResult.Error}", null);
             }
 
-            object result = interpreterResult.Search == SearchType.JUST_NAMESPACE
-                ? await SearchAsync(interpreterResult, SearchType.NONE) ?? await SearchAsync(interpreterResult, SearchType.JUST_NAMESPACE) ?? await SearchAsync(interpreterResult, SearchType.JUST_TEXT) ?? await SearchAsync(interpreterResult, SearchType.ALL)
-                : await SearchAsync(interpreterResult, SearchType.NONE) ?? await SearchAsync(interpreterResult, SearchType.JUST_TEXT) ?? await SearchAsync(interpreterResult, SearchType.JUST_NAMESPACE) ?? await SearchAsync(interpreterResult, SearchType.ALL);
+            object result = interpreterResult.Search == SearchType.JustNamespace
+                ? await SearchAsync(interpreterResult, SearchType.None) ?? await SearchAsync(interpreterResult, SearchType.JustNamespace) ?? await SearchAsync(interpreterResult, SearchType.JustText) ?? await SearchAsync(interpreterResult, SearchType.All)
+                : await SearchAsync(interpreterResult, SearchType.None) ?? await SearchAsync(interpreterResult, SearchType.JustText) ?? await SearchAsync(interpreterResult, SearchType.JustNamespace) ?? await SearchAsync(interpreterResult, SearchType.All);
             return result == null ? ($"No results found for `{text}`.", null) : ("", result);
         }
 

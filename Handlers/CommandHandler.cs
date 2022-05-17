@@ -43,13 +43,13 @@ namespace DSharpPlusDocs.Handlers
         private DiscordClient _client;
         private MainHandler _mainHandler;
         private IServiceProvider _services;
-        private readonly MemoryCache cache = new MemoryCache(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
+        private readonly MemoryCache cache = new(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
 
         public Task InitializeAsync(MainHandler mainHandler)
         {
             _mainHandler = mainHandler;
             _client = mainHandler.Client;
-            ServiceCollection services = new ServiceCollection();
+            ServiceCollection services = new();
             services.AddSingleton(mainHandler);
             services.AddSingleton(new PaginationService(_client));
             _services = services.BuildServiceProvider();
@@ -66,16 +66,16 @@ namespace DSharpPlusDocs.Handlers
             _commands.RegisterCommands<GeneralCommands>();
 
             _client.MessageUpdated += HandleUpdate;
-            _commands.CommandErrored += _commands_CommandErrored;
+            _commands.CommandErrored += CommandErroredAsync;
 
             return Task.CompletedTask;
         }
 
-        private async Task _commands_CommandErrored(CommandsNextExtension commandsNext, CommandErrorEventArgs e)
+        private async Task CommandErroredAsync(CommandsNextExtension commandsNext, CommandErrorEventArgs e)
         {
             if (e.Exception is CommandNotFoundException)
             {
-                (string, DiscordEmbedBuilder, PaginatedMessage) reply = await BuildReply(e.Context.Message, e.Context.Message.Content.Substring(e.Context.Message.GetMentionPrefixLength(_client.CurrentUser)));
+                (string, DiscordEmbedBuilder, PaginatedMessage) reply = await BuildReplyAsync(e.Context.Message, e.Context.Message.Content[e.Context.Message.GetMentionPrefixLength(_client.CurrentUser)..]);
                 if (reply.Item1 == null && reply.Item2 == null && reply.Item3 == null)
                 {
                     return;
@@ -96,7 +96,7 @@ namespace DSharpPlusDocs.Handlers
         {
             if (!msg.Channel.IsPrivate && msg.Channel.Guild.Id == 81384788765712384)
             {
-                if (msg.Channel.Name != "dotnet_dsharpplus" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground")
+                if (msg.Channel.Name is not "dotnet_dsharpplus" and not "testing" and not "playground")
                 {
                     return Task.FromResult(-1);
                 }
@@ -124,7 +124,7 @@ namespace DSharpPlusDocs.Handlers
                         return;
                     }
 
-                    (string, DiscordEmbedBuilder, PaginatedMessage) reply = await BuildReply(e.Message, e.Message.Content.Substring(argPos));
+                    (string, DiscordEmbedBuilder, PaginatedMessage) reply = await BuildReplyAsync(e.Message, e.Message.Content[argPos..]);
 
                     if (reply.Item1 == null && reply.Item2 == null && reply.Item3 == null)
                     {
@@ -158,7 +158,7 @@ namespace DSharpPlusDocs.Handlers
             return Task.CompletedTask;
         }
 
-        private async Task<(string, DiscordEmbedBuilder, PaginatedMessage)> BuildReply(DiscordMessage msg, string message)
+        private async Task<(string, DiscordEmbedBuilder, PaginatedMessage)> BuildReplyAsync(DiscordMessage msg, string message)
         {
             if (!_mainHandler.QueryHandler.IsReady())
             {
@@ -171,7 +171,7 @@ namespace DSharpPlusDocs.Handlers
                     (string, object) tuple = await _mainHandler.QueryHandler.RunAsync(message);
                     if (tuple.Item2 is PaginatorBuilder pag)
                     {
-                        PaginatedMessage paginated = new PaginatedMessage(pag.Pages, "Results", user: msg.Author, options: new AppearanceOptions { Timeout = TimeSpan.FromMinutes(10) });
+                        PaginatedMessage paginated = new(pag.Pages, "Results", user: msg.Author, options: new AppearanceOptions { Timeout = TimeSpan.FromMinutes(10) });
                         return (null, null, paginated);
                     }
                     else

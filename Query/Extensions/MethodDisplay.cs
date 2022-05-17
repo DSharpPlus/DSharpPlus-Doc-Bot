@@ -29,10 +29,10 @@ using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
-using DSharpPlusDocs.Github;
 using DSharpPlusDocs.Handlers;
 using DSharpPlusDocs.Query.Results;
 using DSharpPlusDocs.Query.Wrappers;
+using DSharpPlusDocs.Rest;
 
 namespace DSharpPlusDocs.Query
 {
@@ -82,7 +82,7 @@ namespace DSharpPlusDocs.Query
                 return "";
             }
 
-            Regex rgx = new Regex("[^a-zA-Z0-9_][^a-zA-Z]*");
+            Regex rgx = new("[^a-zA-Z0-9_][^a-zA-Z]*");
             string parameters = "";
             string parameters_orig = "";
             foreach (ParameterInfo pi in mi.Method.GetParameters())
@@ -94,13 +94,13 @@ namespace DSharpPlusDocs.Query
                 }
 
                 parameters += $"{format}_";
-                parameters_orig += $"{pi.ParameterType.ToString()}_";
+                parameters_orig += $"{pi.ParameterType}_";
             }
             string final = $"#{mi.Parent.TypeInfo.Namespace.Replace('.', '_')}_{mi.Parent.TypeInfo.Name}_{mi.Method.Name}_{parameters}";
             return final.Length > 68 && !removeDiscord ? MethodToDocs(mi, true) : final;
         }
 
-        private string BuildMethod(MethodInfoWrapper methodWrapper)
+        private static string BuildMethod(MethodInfoWrapper methodWrapper)
         {
             MethodInfo mi = methodWrapper.Method;
             IEnumerable<string> parameters = null;
@@ -111,31 +111,16 @@ namespace DSharpPlusDocs.Query
             return $"{Utils.BuildType(mi.ReturnType)} {mi.Name}({string.Join(", ", parameters)})";
         }
 
-        private string BuildPreParameter(ParameterInfo pi)
+        private static string BuildPreParameter(ParameterInfo pi) => pi.IsOut ? "out " : pi.ParameterType.IsByRef ? "ref " : "";
+
+        private static string GetParameterDefaultValue(ParameterInfo pi) => pi.HasDefaultValue ? $" = {GetDefaultValueAsString(pi.DefaultValue)}" : "";
+
+        private static string GetDefaultValueAsString(object obj) => obj switch
         {
-            if (pi.IsOut)
-            {
-                return "out ";
-            }
-
-            return pi.ParameterType.IsByRef ? "ref " : "";
-        }
-
-        private string GetParameterDefaultValue(ParameterInfo pi) => pi.HasDefaultValue ? $" = {GetDefaultValueAsString(pi.DefaultValue)}" : "";
-
-        private string GetDefaultValueAsString(object obj)
-        {
-            if (obj == null)
-            {
-                return "null";
-            }
-
-            switch (obj)
-            {
-                case false: return "false";
-                case true: return "true";
-                default: return obj.ToString();
-            }
-        }
+            null => "null",
+            true => "true",
+            false => "false",
+            _ => obj.ToString()
+        };
     }
 }

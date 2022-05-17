@@ -48,7 +48,5 @@ namespace DSharpPlusDocs.Controllers
             await CommandHandler.InitializeAsync(this);
             QueryHandler.Initialize();
         }
-
-        public MainHandler() => new MainHandler();
     }
 }

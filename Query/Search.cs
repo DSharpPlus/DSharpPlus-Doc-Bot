@@ -42,8 +42,8 @@ namespace DSharpPlusDocs.Query
 
         public SearchResult<object> Run()
         {
-            List<object> found = new List<object>();
-            bool searchText = _result.Search == SearchType.ALL || _result.Search == SearchType.JUST_TEXT;
+            List<object> found = new();
+            bool searchText = _result.Search is SearchType.All or SearchType.JustText;
             if (_result.SearchTypes)
             {
                 found.AddRange(_cache.SearchTypes(_result.Text, !searchText));
@@ -64,13 +64,13 @@ namespace DSharpPlusDocs.Query
                 found.AddRange(_cache.SearchEvents(_result.Text, !searchText));
             }
 
-            found = NamespaceFilter(found, _result.Search == SearchType.NONE || _result.Search == SearchType.JUST_TEXT);
+            found = NamespaceFilter(found);
             return new SearchResult<object>(found);
         }
 
-        private List<object> NamespaceFilter(List<object> oldList, bool exactName = true)
+        private List<object> NamespaceFilter(List<object> oldList)
         {
-            List<object> list = new List<object>();
+            List<object> list = new();
             foreach (object o in oldList)
             {
                 if (o is TypeInfoWrapper type /*&& !type.TypeInfo.Namespace.StartsWith("Discord.API")*/ && CompareNamespaces(type.TypeInfo.Namespace))
@@ -101,12 +101,12 @@ namespace DSharpPlusDocs.Query
                 return true;
             }
 
-            if (_result.Search == SearchType.ALL || _result.Search == SearchType.JUST_NAMESPACE)
+            if (_result.Search is SearchType.All or SearchType.JustNamespace)
             {
                 return toCompare.IndexOf(_result.Namespace, StringComparison.OrdinalIgnoreCase) != -1;
             }
             //Regex rgx = new Regex($"(\\.{_result.Namespace}\\b|\\b{_result.Namespace}\\.|\\b{_result.Namespace}\\b)", RegexOptions.IgnoreCase);
-            Regex rgx = new Regex($"(\\.{_result.Namespace}\\b|^{_result.Namespace}$)", RegexOptions.IgnoreCase);
+            Regex rgx = new($"(\\.{_result.Namespace}\\b|^{_result.Namespace}$)", RegexOptions.IgnoreCase);
             return rgx.IsMatch(toCompare);
         }
     }

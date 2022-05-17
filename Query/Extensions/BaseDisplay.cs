@@ -36,7 +36,7 @@ namespace DSharpPlusDocs.Query
 {
     public partial class ResultDisplay
     {
-        private async Task<DocsHttpResult> GetWebDocsAsync(string url, object o)
+        private static async Task<DocsHttpResult> GetWebDocsAsync(string url, object o)
         {
             string summary = null, example = null;
             string search = GetDocsUrlPath(o);
@@ -44,15 +44,15 @@ namespace DSharpPlusDocs.Query
             string html = result.Item2;
             if (result.Item1 && !string.IsNullOrEmpty(html))
             {
-                string block = (o is TypeInfoWrapper) ? html.Substring(html.IndexOf($"<h1 id=\"{search}")) : html.Substring(html.IndexOf($"<h4 id=\"{search}"));
-                string anchor = block.Substring(block.IndexOf('"') + 1);
-                anchor = anchor.Substring(0, anchor.IndexOf('"'));
-                summary = block.Substring(block.IndexOf("summary\">") + 9);
-                summary = summary.Substring(0, summary.IndexOf("</div>"));
+                string block = (o is TypeInfoWrapper) ? html[html.IndexOf($"<h1 id=\"{search}")..] : html[html.IndexOf($"<h4 id=\"{search}")..];
+                string anchor = block[(block.IndexOf('"') + 1)..];
+                anchor = anchor[..anchor.IndexOf('"')];
+                summary = block[(block.IndexOf("summary\">") + 9)..];
+                summary = summary[..summary.IndexOf("</div>")];
                 summary = WebUtility.HtmlDecode(StripTags(summary));
                 /*string example = block.Substring(block.IndexOf("example\">")); //TODO: Find this
                 summary = summary.Substring(0, summary.IndexOf("</div>"));*/
-                if (!(o is TypeInfoWrapper) && !IsInherited(o))
+                if (o is not TypeInfoWrapper && !IsInherited(o))
                 {
                     url += $"#{anchor}";
                 }
@@ -60,7 +60,7 @@ namespace DSharpPlusDocs.Query
             return new DocsHttpResult(url, summary, example);
         }
 
-        private async Task<(bool, string)> GetWebDocsHtmlAsync(string url, object o)
+        private static async Task<(bool, string)> GetWebDocsHtmlAsync(string url, object o)
         {
             string html;
             if (IsInherited(o))
@@ -89,7 +89,8 @@ namespace DSharpPlusDocs.Query
                     }
                 }
             }
-            using (HttpClient httpClient = new HttpClient { Timeout = TimeSpan.FromSeconds(6) })
+            using (HttpClient httpClient = new()
+            { Timeout = TimeSpan.FromSeconds(6) })
             {
                 HttpResponseMessage res = await httpClient.GetAsync(url);
                 if (!res.IsSuccessStatusCode)
@@ -109,48 +110,31 @@ namespace DSharpPlusDocs.Query
             return (true, html);
         }
 
-        private string GetDocsUrlPath(object o)
+        private static string GetDocsUrlPath(object o)
         {
             bool useParent = !IsInherited(o);
-            Regex rgx = new Regex("\\W+");
-            if (o is TypeInfoWrapper type)
-            {
-                return rgx.Replace($"{type.TypeInfo.Namespace}_{type.TypeInfo.Name}", "_");
-            }
-
-            if (o is MethodInfoWrapper method)
-            {
-                return rgx.Replace($"{(useParent ? method.Parent.TypeInfo.Namespace : method.Method.DeclaringType.Namespace)}_{(useParent ? method.Parent.TypeInfo.Name : method.Method.DeclaringType.Name)}_{method.Method.Name}", "_");
-            }
-
-            if (o is PropertyInfoWrapper property)
-            {
-                return rgx.Replace($"{(useParent ? property.Parent.TypeInfo.Namespace : property.Property.DeclaringType.Namespace)}_{(useParent ? property.Parent.TypeInfo.Name : property.Property.DeclaringType.Name)}_{property.Property.Name}", "_");
-            }
-
-            return o is EventInfoWrapper eve
+            Regex rgx = new("\\W+");
+            return o is TypeInfoWrapper type
+                ? rgx.Replace($"{type.TypeInfo.Namespace}_{type.TypeInfo.Name}", "_")
+                : o is MethodInfoWrapper method
+                ? rgx.Replace($"{(useParent ? method.Parent.TypeInfo.Namespace : method.Method.DeclaringType.Namespace)}_{(useParent ? method.Parent.TypeInfo.Name : method.Method.DeclaringType.Name)}_{method.Method.Name}", "_")
+                : o is PropertyInfoWrapper property
+                ? rgx.Replace($"{(useParent ? property.Parent.TypeInfo.Namespace : property.Property.DeclaringType.Namespace)}_{(useParent ? property.Parent.TypeInfo.Name : property.Property.DeclaringType.Name)}_{property.Property.Name}", "_")
+                : o is EventInfoWrapper eve
                 ? rgx.Replace($"{eve.Parent.TypeInfo.Namespace}_{eve.Parent.TypeInfo.Name}_{eve.Event.Name}".Replace('.', '_'), "_")
                 : rgx.Replace($"{o.GetType().Namespace}_{o.GetType().Name}".Replace('.', '_'), "_");
         }
 
         //Generic types will return like Type`1 and the docs change to Type-1
-        private string SanitizeDocsUrl(string text) => text.Replace('`', '-');
+        private static string SanitizeDocsUrl(string text) => text.Replace('`', '-');
 
-        public bool IsInherited(object o)
-        {
-            if (o is PropertyInfoWrapper property)
-            {
-                return $"{property.Parent.TypeInfo.Namespace}.{property.Parent.TypeInfo.Name}" != $"{property.Property.DeclaringType.Namespace}.{property.Property.DeclaringType.Name}";
-            }
+        public static bool IsInherited(object o) => o is PropertyInfoWrapper property
+                ? $"{property.Parent.TypeInfo.Namespace}.{property.Parent.TypeInfo.Name}" != $"{property.Property.DeclaringType.Namespace}.{property.Property.DeclaringType.Name}"
+                : o is MethodInfoWrapper method && $"{method.Parent.TypeInfo.Namespace}.{method.Parent.TypeInfo.Name}" != $"{method.Method.DeclaringType.Namespace}.{method.Method.DeclaringType.Name}";
 
-            return o is MethodInfoWrapper method
-                ? $"{method.Parent.TypeInfo.Namespace}.{method.Parent.TypeInfo.Name}" != $"{method.Method.DeclaringType.Namespace}.{method.Method.DeclaringType.Name}"
-                : false;
-        }
+        private static List<string> GetPaths(IEnumerable<object> list) => list.Select(x => GetPath(x)).ToList();
 
-        private List<string> GetPaths(IEnumerable<object> list) => list.Select(x => GetPath(x)).ToList();
-
-        public string GetPath(object o, bool withInheritanceMarkup = true)
+        public static string GetPath(object o, bool withInheritanceMarkup = true)
         {
             if (o is TypeInfoWrapper typeWrapper)
             {
@@ -166,22 +150,16 @@ namespace DSharpPlusDocs.Query
 
                 return $"{type}: {typeWrapper.DisplayName} in {typeWrapper.TypeInfo.Namespace}";
             }
-            if (o is MethodInfoWrapper method)
-            {
-                return $"Method: {method.Method.Name} in {method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}{(IsInherited(method) && withInheritanceMarkup ? " (i)" : "")}";
-            }
-
-            if (o is PropertyInfoWrapper property)
-            {
-                return $"Property: {property.Property.Name} in {property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}{(IsInherited(property) && withInheritanceMarkup ? " (i)" : "")}";
-            }
-
-            return o is EventInfoWrapper eve
+            return o is MethodInfoWrapper method
+                ? $"Method: {method.Method.Name} in {method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}{(global::DSharpPlusDocs.Query.ResultDisplay.IsInherited(method) && withInheritanceMarkup ? " (i)" : "")}"
+                : o is PropertyInfoWrapper property
+                ? $"Property: {property.Property.Name} in {property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}{(global::DSharpPlusDocs.Query.ResultDisplay.IsInherited(property) && withInheritanceMarkup ? " (i)" : "")}"
+                : o is EventInfoWrapper eve
                 ? $"Event: {eve.Event.Name} in {eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}"
                 : o.GetType().ToString();
         }
 
-        public string GetSimplePath(object o)
+        public static string GetSimplePath(object o)
         {
             if (o is TypeInfoWrapper typeWrapper)
             {
@@ -197,60 +175,30 @@ namespace DSharpPlusDocs.Query
 
                 return $"{type}:{typeWrapper.DisplayName}";
             }
-            if (o is MethodInfoWrapper method)
-            {
-                return $"Method:{method.Method.Name}";
-            }
-
-            if (o is PropertyInfoWrapper property)
-            {
-                return $"Property:{property.Property.Name}";
-            }
-
-            return o is EventInfoWrapper eve ? $"Event:{eve.Event.Name}" : o.GetType().ToString();
+            return o is MethodInfoWrapper method
+                ? $"Method:{method.Method.Name}"
+                : o is PropertyInfoWrapper property
+                ? $"Property:{property.Property.Name}"
+                : o is EventInfoWrapper eve ? $"Event:{eve.Event.Name}" : o.GetType().ToString();
         }
 
-        public string GetNamespace(object o, bool withInheritanceMarkup = true)
-        {
-            if (o is TypeInfoWrapper typeWrapper)
-            {
-                return typeWrapper.TypeInfo.Namespace;
-            }
+        public static string GetNamespace(object o) => o is TypeInfoWrapper typeWrapper
+                ? typeWrapper.TypeInfo.Namespace
+                : o is MethodInfoWrapper method
+                ? $"{method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}"
+                : o is PropertyInfoWrapper property
+                ? $"{property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}"
+                : o is EventInfoWrapper eve ? $"{eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}" : o.GetType().Namespace;
 
-            if (o is MethodInfoWrapper method)
-            {
-                return $"{method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}";
-            }
+        public static string GetParent(object o) => o is TypeInfoWrapper typeWrapper
+                ? typeWrapper.DisplayName
+                : o is MethodInfoWrapper method
+                ? method.Parent.DisplayName
+                : o is PropertyInfoWrapper property
+                ? property.Parent.DisplayName
+                : o is EventInfoWrapper eve ? eve.Parent.DisplayName : o.GetType().Name;
 
-            if (o is PropertyInfoWrapper property)
-            {
-                return $"{property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}";
-            }
-
-            return o is EventInfoWrapper eve ? $"{eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}" : o.GetType().Namespace;
-        }
-
-        public string GetParent(object o, bool withInheritanceMarkup = true)
-        {
-            if (o is TypeInfoWrapper typeWrapper)
-            {
-                return typeWrapper.DisplayName;
-            }
-
-            if (o is MethodInfoWrapper method)
-            {
-                return method.Parent.DisplayName;
-            }
-
-            if (o is PropertyInfoWrapper property)
-            {
-                return property.Parent.DisplayName;
-            }
-
-            return o is EventInfoWrapper eve ? eve.Parent.DisplayName : o.GetType().Name;
-        }
-
-        private string StripTags(string source)
+        private static string StripTags(string source)
         {
             char[] array = new char[source.Length];
             int arrayIndex = 0;
@@ -278,12 +226,12 @@ namespace DSharpPlusDocs.Query
             return new string(array, 0, arrayIndex);
         }
 
-        private string FormatGithubUrl(string url) => $"[{url.Substring(url.LastIndexOf('/') + 1)}]({url})";
+        private static string FormatGithubUrl(string url) => $"[{url[(url.LastIndexOf('/') + 1)..]}]({url})";
 
-        private string FormatDocsUrl(string url)
+        private static string FormatDocsUrl(string url)
         {
             int idx = url.IndexOf('#');
-            string[] arr = idx == -1 ? url.Substring(0).Split('.') : url.Substring(0, idx).Split('.');
+            string[] arr = idx == -1 ? url[..].Split('.') : url[..idx].Split('.');
             return $"[{arr.ElementAt(arr.Length - 2)}.html]({url})";
         }
     }

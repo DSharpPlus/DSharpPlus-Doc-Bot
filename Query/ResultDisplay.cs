@@ -47,41 +47,27 @@ namespace DSharpPlusDocs.Query
         public async Task<object> RunAsync()
         {
             IEnumerable<IGrouping<string, object>> list = _result.List.GroupBy(x => GetPath(x, false));
-            if (_isList)
-            {
-                return ShowList(list);
-            }
-
-            return list.Count() == 1 ? await ShowAsync(list.First()) : (object)await ShowMultipleAsync(list);
+            return _isList ? ShowList(list) : list.Count() == 1 ? await ShowAsync(list.First()) : (object)await ShowMultipleAsync(list);
         }
 
         private async Task<DiscordEmbedBuilder> ShowAsync(IEnumerable<object> o)
         {
             object first = o.First();
-            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
-            if (first is TypeInfoWrapper)
+            DiscordEmbedBuilder eb = first switch
             {
-                eb = await ShowTypesAsync(eb, o.Select(x => (TypeInfoWrapper)x));
-            }
-            else if (first is MethodInfoWrapper)
-            {
-                eb = await ShowMethodsAsync(eb, o.Select(x => (MethodInfoWrapper)x));
-            }
-            else if (first is PropertyInfoWrapper)
-            {
-                eb = await ShowPropertiesAsync(eb, o.Select(x => (PropertyInfoWrapper)x));
-            }
-            else if (first is EventInfoWrapper)
-            {
-                eb = await ShowEventsAsync(eb, o.Select(x => (EventInfoWrapper)x));
-            }
+                TypeInfoWrapper => await ShowTypesAsync(new(), o.Select(x => (TypeInfoWrapper)x)),
+                MethodInfoWrapper => await ShowMethodsAsync(new(), o.Select(x => (MethodInfoWrapper)x)),
+                PropertyInfoWrapper => await ShowPropertiesAsync(new(), o.Select(x => (PropertyInfoWrapper)x)),
+                EventInfoWrapper => await ShowEventsAsync(new(), o.Select(x => (EventInfoWrapper)x)),
+                _ => throw new NotImplementedException()
+            };
 
             return eb;
         }
 
         private async Task<DiscordEmbedBuilder> ShowMultipleAsync(IEnumerable<IEnumerable<object>> obj)
         {
-            DiscordEmbedBuilder eb = new DiscordEmbedBuilder();
+            DiscordEmbedBuilder eb = new();
             IEnumerable<object> singleList = obj.Select(x => x.First());
             IEnumerable<IGrouping<string, object>> same = singleList.GroupBy(x => GetSimplePath(x));
             if (same.Count() == 1)
@@ -124,7 +110,7 @@ namespace DSharpPlusDocs.Query
 
         private PaginatorBuilder ShowList(IEnumerable<IEnumerable<object>> obj)
         {
-            PaginatorBuilder eb = new PaginatorBuilder();
+            PaginatorBuilder eb = new();
             IEnumerable<object> singleList = obj.Select(x => x.First());
             int size = 10;
             int pages = (int)Math.Ceiling(singleList.Count() / (float)size);

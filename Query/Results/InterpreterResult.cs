@@ -35,7 +35,7 @@ namespace DSharpPlusDocs.Query.Results
         public SearchType Search { get; internal set; }
         public bool IsSuccess { get; internal set; }
         public string Error { get; internal set; }
-        public InterpreterResult(string text, string nspace = null, SearchType search = SearchType.NONE, bool searchTypes = true, bool searchMethods = true, bool searchProperties = true, bool searchEvents = true, bool isList = false)
+        public InterpreterResult(string text, string nspace = null, SearchType search = SearchType.None, bool searchTypes = true, bool searchMethods = true, bool searchProperties = true, bool searchEvents = true, bool isList = false)
         {
             Text = text;
             Namespace = nspace;

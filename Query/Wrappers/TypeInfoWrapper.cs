@@ -39,7 +39,7 @@ namespace DSharpPlusDocs.Query.Wrappers
             int idx;
             if ((idx = Name.IndexOf('`')) != -1)
             {
-                Name = Name.Substring(0, idx);
+                Name = Name[..idx];
             }
         }
     }

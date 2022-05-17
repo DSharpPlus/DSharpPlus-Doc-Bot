@@ -26,10 +26,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using DSharpPlus.Entities;
-using DSharpPlusDocs.Github;
 using DSharpPlusDocs.Handlers;
 using DSharpPlusDocs.Query.Results;
 using DSharpPlusDocs.Query.Wrappers;
+using DSharpPlusDocs.Rest;
 
 namespace DSharpPlusDocs.Query
 {

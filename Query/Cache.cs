@@ -95,7 +95,7 @@ namespace DSharpPlusDocs.Query
                 return null;
             }
 
-            CacheBag cb = new CacheBag(allTypes[type]);
+            CacheBag cb = new(allTypes[type]);
             foreach (ConcurrentBag<MethodInfo> bag in extensions.Values)
             {
                 foreach (MethodInfo mi in bag)
@@ -138,7 +138,7 @@ namespace DSharpPlusDocs.Query
 
         public List<MethodInfoWrapper> SearchMethods(string name, bool exactName = true)
         {
-            List<MethodInfoWrapper> result = new List<MethodInfoWrapper>();
+            List<MethodInfoWrapper> result = new();
             foreach (TypeInfoWrapper type in allTypes.Keys)
             {
                 result.AddRange(GetCacheBag(type).Methods.Where(x => exactName ? x.Name.ToLower() == name.ToLower() : SearchFunction(name, x.Name.ToLower())).Select(x => new MethodInfoWrapper(type, x)));
@@ -149,7 +149,7 @@ namespace DSharpPlusDocs.Query
 
         public List<PropertyInfoWrapper> SearchProperties(string name, bool exactName = true)
         {
-            List<PropertyInfoWrapper> result = new List<PropertyInfoWrapper>();
+            List<PropertyInfoWrapper> result = new();
             foreach (TypeInfoWrapper type in allTypes.Keys)
             {
                 result.AddRange(GetCacheBag(type).Properties.Where(x => exactName ? x.Name.ToLower() == name.ToLower() : SearchFunction(name, x.Name.ToLower())).Select(x => new PropertyInfoWrapper(type, x)));
@@ -160,7 +160,7 @@ namespace DSharpPlusDocs.Query
 
         public List<EventInfoWrapper> SearchEvents(string name, bool exactName = true)
         {
-            List<EventInfoWrapper> result = new List<EventInfoWrapper>();
+            List<EventInfoWrapper> result = new();
             foreach (TypeInfoWrapper type in allTypes.Keys)
             {
                 result.AddRange(GetCacheBag(type).Events.Where(x => exactName ? x.Name.ToLower() == name.ToLower() : SearchFunction(name, x.Name.ToLower())).Select(x => new EventInfoWrapper(type, x)));
@@ -169,11 +169,11 @@ namespace DSharpPlusDocs.Query
             return result;
         }
 
-        private bool SearchFunction(string searchString, string objectName)
+        private static bool SearchFunction(string searchString, string objectName)
         {
             foreach (string s in searchString.Split(new[] { ' ' }, StringSplitOptions.RemoveEmptyEntries))
             {
-                if (objectName.IndexOf(s, StringComparison.OrdinalIgnoreCase) == -1)
+                if (!objectName.Contains(s, StringComparison.OrdinalIgnoreCase))
                 {
                     return false;
                 }
@@ -210,8 +210,8 @@ namespace DSharpPlusDocs.Query
 
             if (allTypes.Keys.FirstOrDefault(x => x.TypeInfo == type.GetTypeInfo()) == null)
             {
-                TypeInfoWrapper tiw = new TypeInfoWrapper(type);
-                CacheBag cb = new CacheBag();
+                TypeInfoWrapper tiw = new(type);
+                CacheBag cb = new();
                 allTypes[tiw] = cb;
                 foreach (MethodInfo mi in type.GetRuntimeMethods())
                 {
@@ -298,6 +298,6 @@ namespace DSharpPlusDocs.Query
 
         public bool IsReady() => ready;
 
-        private bool CheckNamespace(string ns) => ns.StartsWith("DSharpPlus") && !ns.StartsWith("DSharpPlusDocs");
+        private static bool CheckNamespace(string ns) => ns.StartsWith("DSharpPlus") && !ns.StartsWith("DSharpPlusDocs");
     }
 }
