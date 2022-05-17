@@ -1,4 +1,27 @@
-﻿using System;
+// This file is part of the DSharpPlus project.
+//
+// Copyright (c) 2015 Mike Santiago
+// Copyright (c) 2016-2022 DSharpPlus Contributors
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
@@ -29,10 +52,12 @@ namespace DSharpPlusDocs.Paginator
         /// <returns>The paginated message.</returns>
         public async Task<DiscordMessage> SendPaginatedMessageAsync(DiscordChannel channel, PaginatedMessage paginated)
         {
-            var message = await channel.SendMessageAsync("", embed: paginated.GetEmbed());
+            DiscordMessage message = await channel.SendMessageAsync("", embed: paginated.GetEmbed());
 
             if (paginated.Count == 1)
+            {
                 return message;
+            }
 
             await message.CreateReactionAsync(paginated.Options.EmoteFirst);
             await message.CreateReactionAsync(paginated.Options.EmoteBack);
@@ -46,22 +71,27 @@ namespace DSharpPlusDocs.Paginator
             {
                 _ = Task.Delay(paginated.Options.Timeout).ContinueWith(async _t =>
                 {
-                    if (!_messages.ContainsKey(message.Id)) return;
+                    if (!_messages.ContainsKey(message.Id))
+                    {
+                        return;
+                    }
+
                     _messages.Remove(message.Id);
                     if (paginated.Options.TimeoutAction == StopAction.DeleteMessage)
+                    {
                         await message.DeleteAsync();
+                    }
                     else if (paginated.Options.TimeoutAction == StopAction.ClearReactions)
+                    {
                         await message.DeleteAllReactionsAsync();
+                    }
                 });
             }
 
             return message;
         }
 
-        public bool IsPaginatedMessage(ulong id)
-        {
-            return _messages.ContainsKey(id);
-        }
+        public bool IsPaginatedMessage(ulong id) => _messages.ContainsKey(id);
 
         public async Task UpdatePaginatedMessageAsync(DiscordMessage message, PaginatedMessage page)
         {
@@ -75,7 +105,10 @@ namespace DSharpPlusDocs.Paginator
         public async Task EditMessageToPaginatedMessageAsync(DiscordMessage message, PaginatedMessage paginated)
         {
             if (_messages.ContainsKey(message.Id))
+            {
                 return;
+            }
+
             await message.ModifyAsync(embed: paginated.GetEmbed());
             await message.CreateReactionAsync(paginated.Options.EmoteFirst);
             await message.CreateReactionAsync(paginated.Options.EmoteBack);
@@ -89,12 +122,20 @@ namespace DSharpPlusDocs.Paginator
             {
                 _ = Task.Delay(paginated.Options.Timeout).ContinueWith(async _t =>
                 {
-                    if (!_messages.ContainsKey(message.Id)) return;
+                    if (!_messages.ContainsKey(message.Id))
+                    {
+                        return;
+                    }
+
                     _messages.Remove(message.Id);
                     if (paginated.Options.TimeoutAction == StopAction.DeleteMessage)
+                    {
                         await message.DeleteAsync();
+                    }
                     else if (paginated.Options.TimeoutAction == StopAction.ClearReactions)
+                    {
                         await message.DeleteAllReactionsAsync();
+                    }
                 });
             }
         }
@@ -102,17 +143,26 @@ namespace DSharpPlusDocs.Paginator
         public void StopTrackingPaginatedMessage(ulong id)
         {
             if (_messages.ContainsKey(id))
+            {
                 _messages.Remove(id);
+            }
         }
 
         internal async Task OnReactionAdded(DiscordClient client, MessageReactionAddEventArgs e)
         {
-            var message = e.Message;
+            DiscordMessage message = e.Message;
             if (message == null)
+            {
                 return;
+            }
+
             if (_messages.TryGetValue(message.Id, out PaginatedMessage page))
             {
-                if (e.User.Id == _client.CurrentUser.Id) return;
+                if (e.User.Id == _client.CurrentUser.Id)
+                {
+                    return;
+                }
+
                 if (page.User != null && e.User.Id != page.User.Id)
                 {
                     _ = message.DeleteReactionAsync(e.Emoji, e.User);
@@ -154,9 +204,13 @@ namespace DSharpPlusDocs.Paginator
                 {
                     _messages.Remove(message.Id);
                     if (page.Options.EmoteStopAction == StopAction.DeleteMessage)
+                    {
                         await message.DeleteAsync();
+                    }
                     else if (page.Options.EmoteStopAction == StopAction.ClearReactions)
+                    {
                         await message.DeleteAllReactionsAsync();
+                    }
                 }
                 _ = message.DeleteReactionAsync(e.Emoji, e.User);
             }
@@ -171,11 +225,11 @@ namespace DSharpPlusDocs.Paginator
         }
         public PaginatedMessage(IEnumerable<Page> pages, string title = "", int embedColor = 0, DiscordUser user = null, AppearanceOptions options = null)
         {
-            var embeds = new List<DiscordEmbed>();
+            List<DiscordEmbed> embeds = new List<DiscordEmbed>();
             int i = 1;
-            foreach (var page in pages)
+            foreach (Page page in pages)
             {
-                var builder = new DiscordEmbedBuilder
+                DiscordEmbedBuilder builder = new DiscordEmbedBuilder
                 {
                     Color = new DiscordColor(embedColor),
                     Title = title,
@@ -184,10 +238,15 @@ namespace DSharpPlusDocs.Paginator
                 };
                 builder.WithThumbnail(page?.ThumbnailUrl);
                 builder.WithFooter($"Page {i++}/{pages.Count()}");
-                var pageFields = page?.Fields?.ToList() ?? new List<DiscordEmbedField>();
+                List<DiscordEmbedField> pageFields = page?.Fields?.ToList() ?? new List<DiscordEmbedField>();
                 if (pageFields != null)
-                    foreach (var field in pageFields)
+                {
+                    foreach (DiscordEmbedField field in pageFields)
+                    {
                         builder.AddField(field.Name, field.Value, field.Inline);
+                    }
+                }
+
                 embeds.Add(builder);
             }
             Pages = embeds;
@@ -198,10 +257,7 @@ namespace DSharpPlusDocs.Paginator
             CurrentPage = 1;
         }
 
-        internal DiscordEmbed GetEmbed()
-        {
-            return Pages.ElementAtOrDefault(CurrentPage - 1);
-        }
+        internal DiscordEmbed GetEmbed() => Pages.ElementAtOrDefault(CurrentPage - 1);
 
         internal string Title { get; }
         internal int EmbedColor { get; }

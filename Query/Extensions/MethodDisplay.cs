@@ -1,8 +1,26 @@
-﻿using DSharpPlus.Entities;
-using DSharpPlusDocs.Github;
-using DSharpPlusDocs.Handlers;
-using DSharpPlusDocs.Query.Results;
-using DSharpPlusDocs.Query.Wrappers;
+// This file is part of the DSharpPlus project.
+//
+// Copyright (c) 2015 Mike Santiago
+// Copyright (c) 2016-2022 DSharpPlus Contributors
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
@@ -10,6 +28,11 @@ using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Text.RegularExpressions;
 using System.Threading.Tasks;
+using DSharpPlus.Entities;
+using DSharpPlusDocs.Github;
+using DSharpPlusDocs.Handlers;
+using DSharpPlusDocs.Query.Results;
+using DSharpPlusDocs.Query.Wrappers;
 
 namespace DSharpPlusDocs.Query
 {
@@ -31,22 +54,34 @@ namespace DSharpPlusDocs.Query
             }
             eb.WithAuthor($"Method: {first.Parent.TypeInfo.Namespace}.{first.Parent.DisplayName}.{first.Method.Name}", result.Url, "http://i.imgur.com/yYiUhdi.png");
             eb.AddField("Docs:", FormatDocsUrl(result.Url), true);
-            var githubUrl = await GithubRest.GetMethodUrlAsync(first);
+            string githubUrl = await GithubRest.GetMethodUrlAsync(first);
             if (githubUrl != null)
+            {
                 eb.AddField("Source:", FormatGithubUrl(githubUrl), true);
+            }
+
             if (result.Summary != null)
+            {
                 eb.AddField("Summary:", result.Summary, false);
+            }
+
             if (result.Example != null)
+            {
                 eb.AddField("Example:", result.Example, false);
+            }
+
             int i = 1;
-            eb.AddField("Overloads:", String.Join("\n", list.OrderBy(y => IsInherited(y)).Select(y => $"``{i++}-``{(IsInherited(y) ? " (i)" : "")} {BuildMethod(y)}")), false);
+            eb.AddField("Overloads:", string.Join("\n", list.OrderBy(y => IsInherited(y)).Select(y => $"``{i++}-``{(IsInherited(y) ? " (i)" : "")} {BuildMethod(y)}")), false);
             return eb;
         }
 
         private string MethodToDocs(MethodInfoWrapper mi, bool removeDiscord = false) //Always second option because the docs urls are too strange, removing the namespace one time and not another...
         {
             if (IsInherited(mi))
+            {
                 return "";
+            }
+
             Regex rgx = new Regex("[^a-zA-Z0-9_][^a-zA-Z]*");
             string parameters = "";
             string parameters_orig = "";
@@ -54,48 +89,47 @@ namespace DSharpPlusDocs.Query
             {
                 string format = rgx.Replace(pi.ParameterType.ToString(), "_").Replace("System_Action", "Action").Replace("System_Collections_Generic_IEnumerable", "IEnumerable");
                 if (removeDiscord)
+                {
                     format = format.Replace("Discord_", "");
+                }
+
                 parameters += $"{format}_";
                 parameters_orig += $"{pi.ParameterType.ToString()}_";
             }
             string final = $"#{mi.Parent.TypeInfo.Namespace.Replace('.', '_')}_{mi.Parent.TypeInfo.Name}_{mi.Method.Name}_{parameters}";
-            if (final.Length > 68 && !removeDiscord) //This isnt how they select if they should remove the namespace...
-                return MethodToDocs(mi, true);
-            return final;
+            return final.Length > 68 && !removeDiscord ? MethodToDocs(mi, true) : final;
         }
 
         private string BuildMethod(MethodInfoWrapper methodWrapper)
         {
-            var mi = methodWrapper.Method;
+            MethodInfo mi = methodWrapper.Method;
             IEnumerable<string> parameters = null;
-            var parametersInfo = mi.GetParameters();
-            if (mi.IsDefined(typeof(ExtensionAttribute)) && parametersInfo.First().ParameterType.IsAssignableFrom(methodWrapper.Parent.TypeInfo.AsType()))
-                parameters = parametersInfo.Skip(1).Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
-            else
-                parameters = parametersInfo.Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
-            return $"{Utils.BuildType(mi.ReturnType)} {mi.Name}({String.Join(", ", parameters)})";
+            ParameterInfo[] parametersInfo = mi.GetParameters();
+            parameters = mi.IsDefined(typeof(ExtensionAttribute)) && parametersInfo.First().ParameterType.IsAssignableFrom(methodWrapper.Parent.TypeInfo.AsType())
+                ? parametersInfo.Skip(1).Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}")
+                : parametersInfo.Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
+            return $"{Utils.BuildType(mi.ReturnType)} {mi.Name}({string.Join(", ", parameters)})";
         }
 
         private string BuildPreParameter(ParameterInfo pi)
         {
             if (pi.IsOut)
+            {
                 return "out ";
-            if (pi.ParameterType.IsByRef)
-                return "ref ";
-            return "";
+            }
+
+            return pi.ParameterType.IsByRef ? "ref " : "";
         }
 
-        private string GetParameterDefaultValue(ParameterInfo pi)
-        {
-            if (pi.HasDefaultValue)
-                return $" = {GetDefaultValueAsString(pi.DefaultValue)}";
-            return "";
-        }
+        private string GetParameterDefaultValue(ParameterInfo pi) => pi.HasDefaultValue ? $" = {GetDefaultValueAsString(pi.DefaultValue)}" : "";
 
         private string GetDefaultValueAsString(object obj)
         {
             if (obj == null)
+            {
                 return "null";
+            }
+
             switch (obj)
             {
                 case false: return "false";

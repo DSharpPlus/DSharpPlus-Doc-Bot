@@ -1,4 +1,27 @@
-﻿using System;
+// This file is part of the DSharpPlus project.
+//
+// Copyright (c) 2015 Mike Santiago
+// Copyright (c) 2016-2022 DSharpPlus Contributors
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
+using System;
 using System.Threading.Tasks;
 using DSharpPlus;
 using DSharpPlus.CommandsNext;
@@ -20,13 +43,13 @@ namespace DSharpPlusDocs.Handlers
         private DiscordClient _client;
         private MainHandler _mainHandler;
         private IServiceProvider _services;
-        private MemoryCache cache = new MemoryCache(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
+        private readonly MemoryCache cache = new MemoryCache(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
 
         public Task InitializeAsync(MainHandler mainHandler)
         {
             _mainHandler = mainHandler;
             _client = mainHandler.Client;
-            var services = new ServiceCollection();
+            ServiceCollection services = new ServiceCollection();
             services.AddSingleton(mainHandler);
             services.AddSingleton(new PaginationService(_client));
             _services = services.BuildServiceProvider();
@@ -52,24 +75,33 @@ namespace DSharpPlusDocs.Handlers
         {
             if (e.Exception is CommandNotFoundException)
             {
-                var reply = await BuildReply(e.Context.Message, e.Context.Message.Content.Substring(e.Context.Message.GetMentionPrefixLength(_client.CurrentUser)));
+                (string, DiscordEmbedBuilder, PaginatedMessage) reply = await BuildReply(e.Context.Message, e.Context.Message.Content.Substring(e.Context.Message.GetMentionPrefixLength(_client.CurrentUser)));
                 if (reply.Item1 == null && reply.Item2 == null && reply.Item3 == null)
+                {
                     return;
-                DiscordMessage message;
-                if (reply.Item3 != null)
-                    message = await e.Context.Services.GetService<PaginationService>().SendPaginatedMessageAsync(e.Context.Channel, reply.Item3);
-                else
-                    message = await e.Context.RespondAsync(reply.Item1, embed: reply.Item2);
+                }
+
+                DiscordMessage message = reply.Item3 != null
+                    ? await e.Context.Services.GetService<PaginationService>().SendPaginatedMessageAsync(e.Context.Channel, reply.Item3)
+                    : await e.Context.RespondAsync(reply.Item1, embed: reply.Item2);
                 AddCache(e.Context.Message.Id, message.Id);
             }
             else
+            {
                 Console.WriteLine(e.Exception);
+            }
         }
 
         public Task<int> HandleCommand(DiscordMessage msg)
         {
             if (!msg.Channel.IsPrivate && msg.Channel.Guild.Id == 81384788765712384)
-                if (msg.Channel.Name != "dotnet_dsharpplus" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground") return Task.FromResult(-1);
+            {
+                if (msg.Channel.Name != "dotnet_dsharpplus" && msg.Channel.Name != "testing" && msg.Channel.Name != "playground")
+                {
+                    return Task.FromResult(-1);
+                }
+            }
+
             return Task.FromResult(msg.GetMentionPrefixLength(_client.CurrentUser));
         }
 
@@ -80,23 +112,37 @@ namespace DSharpPlusDocs.Handlers
                 ulong? id;
                 if ((id = GetOurMessageIdFromCache(e.Message.Id)) != null)
                 {
-                    var botMessage = await e.Channel.GetMessageAsync(id.Value);
+                    DiscordMessage botMessage = await e.Channel.GetMessageAsync(id.Value);
                     if (botMessage == null)
+                    {
                         return;
+                    }
+
                     int argPos = 0;
-                    if ((argPos = await HandleCommand(e.Message)) == -1) return;
-                    var reply = await BuildReply(e.Message, e.Message.Content.Substring(argPos));
+                    if ((argPos = await HandleCommand(e.Message)) == -1)
+                    {
+                        return;
+                    }
+
+                    (string, DiscordEmbedBuilder, PaginatedMessage) reply = await BuildReply(e.Message, e.Message.Content.Substring(argPos));
 
                     if (reply.Item1 == null && reply.Item2 == null && reply.Item3 == null)
+                    {
                         return;
-                    var pagination = _services.GetService<PaginationService>();
-                    var isPaginatedMessage = pagination.IsPaginatedMessage(id.Value);
+                    }
+
+                    PaginationService pagination = _services.GetService<PaginationService>();
+                    bool isPaginatedMessage = pagination.IsPaginatedMessage(id.Value);
                     if (reply.Item3 != null)
                     {
                         if (isPaginatedMessage)
+                        {
                             await pagination.UpdatePaginatedMessageAsync(botMessage, reply.Item3);
+                        }
                         else
+                        {
                             await pagination.EditMessageToPaginatedMessageAsync(botMessage, reply.Item3);
+                        }
                     }
                     else
                     {
@@ -122,14 +168,16 @@ namespace DSharpPlusDocs.Handlers
             {
                 try
                 {
-                    var tuple = await _mainHandler.QueryHandler.RunAsync(message);
+                    (string, object) tuple = await _mainHandler.QueryHandler.RunAsync(message);
                     if (tuple.Item2 is PaginatorBuilder pag)
                     {
-                        var paginated = new PaginatedMessage(pag.Pages, "Results", user: msg.Author, options: new AppearanceOptions { Timeout = TimeSpan.FromMinutes(10) });
+                        PaginatedMessage paginated = new PaginatedMessage(pag.Pages, "Results", user: msg.Author, options: new AppearanceOptions { Timeout = TimeSpan.FromMinutes(10) });
                         return (null, null, paginated);
                     }
                     else
+                    {
                         return (tuple.Item1, tuple.Item2 as DiscordEmbedBuilder, null);
+                    }
                 }
                 catch (Exception e)
                 {
@@ -139,17 +187,9 @@ namespace DSharpPlusDocs.Handlers
             }
         }
 
-        public void AddCache(ulong userMessageId, ulong ourMessageId)
-        {
-            cache.Set(userMessageId, ourMessageId, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
-        }
+        public void AddCache(ulong userMessageId, ulong ourMessageId) => cache.Set(userMessageId, ourMessageId, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
 
-        public ulong? GetOurMessageIdFromCache(ulong messageId)
-        {
-            if (cache.TryGetValue(messageId, out ulong id))
-                return id;
-            return null;
-        }
+        public ulong? GetOurMessageIdFromCache(ulong messageId) => cache.TryGetValue(messageId, out ulong id) ? id : null;
 
         /*public async Task<DiscordEmbed> HelpEmbedBuilderAsync(CommandContext context, string command = null)
         {

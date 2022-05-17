@@ -1,21 +1,44 @@
-﻿using DSharpPlus;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.CommandsNext.Converters;
-using DSharpPlus.CommandsNext.Entities;
-using DSharpPlus.Entities;
+// This file is part of the DSharpPlus project.
+//
+// Copyright (c) 2015 Mike Santiago
+// Copyright (c) 2016-2022 DSharpPlus Contributors
+//
+// Permission is hereby granted, free of charge, to any person obtaining a copy
+// of this software and associated documentation files (the "Software"), to deal
+// in the Software without restriction, including without limitation the rights
+// to use, copy, modify, merge, publish, distribute, sublicense, and/or sell
+// copies of the Software, and to permit persons to whom the Software is
+// furnished to do so, subject to the following conditions:
+//
+// The above copyright notice and this permission notice shall be included in all
+// copies or substantial portions of the Software.
+//
+// THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
+// IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
+// FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
+// AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
+// LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
+// OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
+// SOFTWARE.
+
 using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using DSharpPlus;
+using DSharpPlus.CommandsNext;
+using DSharpPlus.CommandsNext.Converters;
+using DSharpPlus.CommandsNext.Entities;
+using DSharpPlus.Entities;
 
 namespace DSharpPlusDocs.Modules
 {
     public class HelpFormatter : BaseHelpFormatter
     {
-        private DiscordEmbedBuilder _embed;
+        private readonly DiscordEmbedBuilder _embed;
         private string _name, _desc;
         private bool _gexec;
-        private CommandContext _ctx;
+        private readonly CommandContext _ctx;
 
         public HelpFormatter(CommandContext ctx)
             : base(ctx)
@@ -34,35 +57,50 @@ namespace DSharpPlusDocs.Modules
             _desc = command.Description;
             _gexec = true;
             if (command.Aliases.Any())
+            {
                 _embed.AddField("Aliases", string.Join(", ", command.Aliases.Select(Formatter.InlineCode)), false);
+            }
+
             int i = 0;
             foreach (CommandOverload overload in command.Overloads)
             {
-                var sb = new StringBuilder();
+                StringBuilder sb = new StringBuilder();
 
-                foreach (var arg in overload.Arguments)
+                foreach (CommandArgument arg in overload.Arguments)
                 {
                     if (arg.IsOptional || arg.IsCatchAll)
+                    {
                         sb.Append("`[");
+                    }
                     else
+                    {
                         sb.Append("`<");
+                    }
 
                     sb.Append(arg.Name);
 
                     if (arg.IsCatchAll)
+                    {
                         sb.Append("...");
+                    }
 
                     if (arg.IsOptional || arg.IsCatchAll)
+                    {
                         sb.Append("]: ");
+                    }
                     else
+                    {
                         sb.Append(">: ");
+                    }
 
                     sb.Append(BuildType(arg.Type)).Append("`: ");
 
                     sb.Append(string.IsNullOrWhiteSpace(arg.Description) ? "No description provided." : arg.Description);
 
                     if (arg.IsOptional)
+                    {
                         sb.Append(" Default value: ").Append(arg.DefaultValue);
+                    }
 
                     sb.AppendLine();
                 }
@@ -78,9 +116,11 @@ namespace DSharpPlusDocs.Modules
             if ((idx = typeName.IndexOf('`')) != -1)
             {
                 typeName = typeName.Substring(0, idx);
-                var generics = type.GetGenericArguments();
+                Type[] generics = type.GetGenericArguments();
                 if (generics.Any())
+                {
                     typeGeneric = string.Join(", ", generics.Select(x => BuildType(x)));
+                }
             }
             return GetTypeName(type, typeName, typeGeneric);
         }
@@ -88,10 +128,13 @@ namespace DSharpPlusDocs.Modules
         private static string GetTypeName(Type type, string name, string generic)
         {
             if (Nullable.GetUnderlyingType(type) != null)
+            {
                 return $"{generic}?";
-            if (type.IsByRef)
-                return BuildType(type.GetElementType());
-            return Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{(string.IsNullOrEmpty(generic) ? "" : $"<{generic}>")}";
+            }
+
+            return type.IsByRef
+                ? BuildType(type.GetElementType())
+                : Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{(string.IsNullOrEmpty(generic) ? "" : $"<{generic}>")}";
         }
 
         private static readonly Dictionary<Type, string> Aliases = new Dictionary<Type, string>()
@@ -117,7 +160,10 @@ namespace DSharpPlusDocs.Modules
         public override BaseHelpFormatter WithSubcommands(IEnumerable<Command> subcommands)
         {
             if (subcommands.Any())
+            {
                 _embed.AddField(_name != null ? "Subcommands" : "Commands", string.Join(", ", subcommands.Select(xc => Formatter.InlineCode(xc.Name))), false);
+            }
+
             return this;
         }
 
@@ -127,16 +173,18 @@ namespace DSharpPlusDocs.Modules
             _embed.Color = DiscordColor.Azure;
 
             //var desc = "Listing all top-level commands and groups. Specify a command to see more information.";
-            var desc = "";
+            string desc = "";
             if (_name != null)
             {
-                var sb = new StringBuilder();
+                StringBuilder sb = new StringBuilder();
                 sb.Append(Formatter.InlineCode(_name))
                     .Append(": ")
                     .Append(string.IsNullOrWhiteSpace(_desc) ? "No description provided." : _desc);
 
                 if (_gexec)
+                {
                     sb.AppendLine().AppendLine().Append("This group can be executed as a standalone command.");
+                }
 
                 desc = sb.ToString();
             }
