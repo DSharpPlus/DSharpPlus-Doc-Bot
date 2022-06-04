@@ -21,13 +21,13 @@ namespace DSharpPlus.DocBot
 
         private static readonly MethodSignatureFormat[] CachedMethodSignatureFormats = Enum.GetValues(typeof(MethodSignatureFormat)).Cast<MethodSignatureFormat>().ToArray();
 
-        public static string[] GetMethodNames(Type type, int maxStringLength)
-        {
-            foreach (MethodInfo methodInfo in MethodGroups.Values.Select(methods => methods[0]).Where(method => method.DeclaringType == type))
-            {
-                string methodName = GetMethodSignature(methodInfo, MethodSignatureFormat.Full);
-            }
-        }
+        //public static string[] GetMethodNames(Type type, int maxStringLength)
+        //{
+        //    foreach (MethodInfo methodInfo in MethodGroups.Values.Select(methods => methods[0]).Where(method => method.DeclaringType == type))
+        //    {
+        //        string methodName = GetMethodSignature(methodInfo, MethodSignatureFormat.Full);
+        //    }
+        //}
 
         public static string GetMethodSignature(MethodInfo method, MethodSignatureFormat methodSignatureFormat = MethodSignatureFormat.Full)
         {
