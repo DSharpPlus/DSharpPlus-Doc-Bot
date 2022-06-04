@@ -19,9 +19,10 @@ namespace DSharpPlus.DocBot.Events
             }
 
             // Ensure the message contains something to search and isn't a random bot ping.
-            string fullCommand = $"docs {eventArgs.Message.Content[client.CurrentUser.Mention.Length..].Trim()}";
-            if (string.CompareOrdinal(fullCommand, "docs") == 0)
+            string fullCommand = $"docs {eventArgs.Message.Content[client.CurrentUser.Mention.Length..]}".Trim();
+            if (fullCommand == "docs")
             {
+                // TODO: Help command
                 return Task.CompletedTask;
             }
 

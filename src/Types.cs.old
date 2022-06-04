@@ -2,6 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using System.Runtime.CompilerServices;
 using System.Text;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
@@ -15,7 +16,7 @@ namespace DSharpPlus.DocBot
     /// <summary>
     /// All of the D#+ types, methods and properties available in one static class.
     /// </summary>
-    public static class CachedReflection
+    public static class CachedReflectionOld
     {
         /// <summary>
         /// A collection of all DSharpPlus types, official extensions included.
@@ -42,27 +43,7 @@ namespace DSharpPlus.DocBot
         /// </summary>
         static CachedReflection()
         {
-            // Gather all D#+ types
-            Types = typeof(DiscordClient).Assembly.ExportedTypes
-                .Concat(typeof(CommandsNextExtension).Assembly.ExportedTypes)
-                .Concat(typeof(InteractivityExtension).Assembly.ExportedTypes)
-                .Concat(typeof(LavalinkExtension).Assembly.ExportedTypes)
-                .Concat(typeof(SlashCommandsExtension).Assembly.ExportedTypes)
-                .Concat(typeof(VoiceNextExtension).Assembly.ExportedTypes)
-            .ToArray();
 
-            // Gather all D#+ methods, grouping them by method name and grouping them by method overloads
-            MethodGroups = Types
-                .SelectMany(t => t
-                    .GetMethods() // TODO: I'd like to use binding flags here as I feel it'd be more efficient however I haven't been able to understand how they work yet.
-                    .Where(t => t.IsPublic // Public methods
-                        && !t.IsSpecialName // Drop property getters/setters
-                        && t.GetBaseDefinition().DeclaringType!.Namespace!.StartsWith("DSharpPlus"))) // Drop methods not implemented by us (aka object and Enum methods)
-                .GroupBy(t => $"{t.DeclaringType!.Namespace}.{t.DeclaringType.Name}.{t.Name}") // Namespace.Class.Method
-                .ToDictionary(t => t.Key, t => t.ToArray()); // Group method overloads by method name
-
-            // I believe this grabs all public properties
-            Properties = Types.SelectMany(t => t.GetProperties()).ToArray();
         }
 
         /// <summary>
@@ -70,14 +51,46 @@ namespace DSharpPlus.DocBot
         /// </summary>
         /// <param name="methodInfo">The method to retrieve information from.</param>
         /// <returns>A string representation of a method's signature.</returns>
-        public static string GetMethodSignature(MethodInfo methodInfo)
+        public static string GetMethodSignature(MethodInfo methodInfo, bool withReturnType = true)
         {
             StringBuilder stringBuilder = new();
-            stringBuilder.Append(ResolveGenericTypes(methodInfo.ReturnType));
-            stringBuilder.Append(' ');
+            if (withReturnType && !methodInfo.IsConstructor)
+            {
+                if (methodInfo.IsStatic)
+                {
+                    stringBuilder.Append("static ");
+                }
+                else if (methodInfo.IsVirtual)
+                {
+                    stringBuilder.Append("virtual ");
+                }
+
+                stringBuilder.Append(ResolveGenericTypes(methodInfo.ReturnType));
+                stringBuilder.Append(' ');
+            }
             stringBuilder.Append(methodInfo.Name);
             stringBuilder.Append('(');
-            stringBuilder.Append(string.Join(", ", methodInfo.GetParameters().Select(x => ResolveGenericTypes(x.ParameterType) + " " + x.Name)));
+            foreach (ParameterInfo parameterInfo in methodInfo.GetParameters())
+            {
+                if (methodInfo.IsDefined(typeof(ExtensionAttribute), true) && parameterInfo.Position == 0)
+                {
+                    stringBuilder.Append("this ");
+                }
+                stringBuilder.Append(ResolveGenericTypes(parameterInfo.ParameterType));
+                stringBuilder.Append(' ');
+                stringBuilder.Append(parameterInfo.Name);
+                if (parameterInfo.HasDefaultValue)
+                {
+                    stringBuilder.Append(" = ");
+                    stringBuilder.Append(parameterInfo.DefaultValue?.ToString() ?? "null");
+                }
+                stringBuilder.Append(", ");
+            }
+
+            if (stringBuilder[^1] == ' ' && stringBuilder[^2] == ',') // EndsWith(", ")
+            {
+                stringBuilder.Remove(stringBuilder.Length - 2, 2);
+            }
             stringBuilder.Append(')');
             return stringBuilder.ToString();
         }

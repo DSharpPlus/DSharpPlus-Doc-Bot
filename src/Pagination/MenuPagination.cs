@@ -10,7 +10,7 @@ namespace DSharpPlus.DocBot.Pagination
         /// <summary>
         /// The title shown in the dropdown.
         /// </summary>
-        public string Title { get; init; }
+        public string Title { get; internal set; }
 
         /// <summary>
         /// The message to be shown upon user selection.
