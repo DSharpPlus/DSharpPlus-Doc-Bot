@@ -2,11 +2,7 @@ using System;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using DSharpPlus.CommandsNext;
-using DSharpPlus.Interactivity;
-using DSharpPlus.Lavalink;
-using DSharpPlus.SlashCommands;
-using DSharpPlus.VoiceNext;
+using System.Text;
 using Microsoft.CSharp;
 
 namespace DSharpPlus.DocBot
@@ -16,53 +12,82 @@ namespace DSharpPlus.DocBot
         /// <summary>
         /// A collection of all DSharpPlus types, official extensions included.
         /// </summary>
-        public static readonly Type[] Types;
+        public static Type[] Types { get; private set; }
 
         /// <summary>
         /// A collection of all DSharpPlus methods, grouped by the method name. Official extensions included.
         /// </summary>
-        public static readonly Dictionary<string, MethodInfo[]> MethodGroups;
+        public static Dictionary<string, MethodInfo[]> MethodGroups { get; private set; }
 
         /// <summary>
         /// A collection of all DSharpPlus properties, grouped by the property name. Official extensions included.
         /// </summary>
-        public static readonly PropertyInfo[] Properties;
+        public static PropertyInfo[] Properties { get; private set; }
 
         /// <summary>
         /// A collection of all DSharpPlus events, grouped by the event name. Official extensions included.
         /// </summary>
-        public static readonly EventInfo[] Events;
+        public static EventInfo[] Events { get; private set; }
 
         /// <summary>
         /// Used by <see cref="ResolveGenericTypes(Type, StringBuilder?)"/> to convert CLR types into their C# representation.
         /// </summary>
         private static readonly CSharpCodeProvider CSharpCodeProvider = new();
 
-        static CachedReflection()
+        static CachedReflection() => DownloadNightliesAsync().GetAwaiter().GetResult();
+
+        /// <summary>
+        /// Resolves generic types into a string, converting them into their C# representation.
+        /// </summary>
+        /// <example>
+        /// <code>
+        ///    ResolveGenericTypes(typeof(List&lt;int&gt;)) // "List&lt;int&gt;"
+        ///    ResolveGenericTypes(typeof(Nullable&lt;ulong&gt;)) // "ulong?"
+        ///    ResolveGenericTypes(typeof(DSharpPlus.Entities.DiscordApplication)) // "DiscordApplication"
+        /// </code>
+        /// </example>
+        /// <param name="type">The type to resolve.</param>
+        /// <param name="stringBuilder">The currently resolved string representation of the (generic) types.</param>
+        /// <returns>A string representation of the type.</returns>
+        public static string ResolveGenericTypes(Type type, StringBuilder? stringBuilder = null)
         {
-            // Gather all D#+ types
-            Types = typeof(DiscordClient).Assembly.ExportedTypes
-                .Concat(typeof(CommandsNextExtension).Assembly.ExportedTypes)
-                .Concat(typeof(InteractivityExtension).Assembly.ExportedTypes)
-                .Concat(typeof(LavalinkExtension).Assembly.ExportedTypes)
-                .Concat(typeof(SlashCommandsExtension).Assembly.ExportedTypes)
-                .Concat(typeof(VoiceNextExtension).Assembly.ExportedTypes)
-            .ToArray();
+            stringBuilder ??= new();
 
-            // Gather all D#+ methods, grouping them by method name and grouping them by method overloads
-            MethodGroups = Types
-                .SelectMany(type => type
-                    .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static | BindingFlags.FlattenHierarchy | BindingFlags.DeclaredOnly) // TODO: I'd like to use binding flags here as I feel it'd be more efficient however I haven't been able to understand how they work yet.
-                    .Where(method => method.GetBaseDefinition().DeclaringType?.Namespace?.StartsWith("DSharpPlus") ?? false)) // Drop methods not implemented by us (aka object and Enum methods)
-                .GroupBy(method => method.Name) // Method name
-                .ToDictionary(method => method.Key, method => method.ToArray()); // Group method overloads by method name
+            // Test if the type is nullable.
+            Type? underlyingNullableType = Nullable.GetUnderlyingType(type);
+            if (underlyingNullableType != null)
+            {
+                // GetTypeOutput returns the full namespace for the type, which is why we split by `.` and take the last element (which should be the type name)
+                // We also append a `?` to the end of the type name to represent the nullable type.
+                stringBuilder.Append(CSharpCodeProvider.GetTypeOutput(new(underlyingNullableType)).Split('.').Last() + "?");
+            }
 
-            // I believe this grabs all public properties
-            Properties = Types.SelectMany(t => t.GetProperties()).ToArray();
+            // Test if the type is a generic type.
+            else if (type.IsGenericType)
+            {
+                // type.Name contains `1 (Action`1) instead of brackets. We chop off the backticks and append the `<` and `>` to the front and back, with the type arguments in between.
+                stringBuilder.Append(type.Name.AsSpan(0, type.Name.IndexOf('`')));
+                stringBuilder.Append('<');
+                foreach (Type genericType in type.GetGenericArguments())
+                {
+                    // Surprise! It's a recursive method.
+                    ResolveGenericTypes(genericType, stringBuilder);
+                    stringBuilder.Append(", ");
+                }
 
-            // Grab all events from all extensions
-            // Not even sure if these binding flags are needed...
-            Events = Types.SelectMany(t => t.GetEvents(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)).ToArray();
+                if (stringBuilder[^1] == ' ' && stringBuilder[^2] == ',') // EndsWith(", ")
+                {
+                    stringBuilder.Remove(stringBuilder.Length - 2, 2);
+                }
+                stringBuilder.Append('>');
+            }
+            else
+            {
+                // As mentioned earlier, we use GetTypeOutput to get the full namespace for the type. We only want the type name.
+                stringBuilder.Append(CSharpCodeProvider.GetTypeOutput(new(type)).Split('.').Last());
+            }
+
+            return stringBuilder.ToString();
         }
     }
 }

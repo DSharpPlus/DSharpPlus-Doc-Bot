@@ -22,32 +22,10 @@ namespace DSharpPlus.DocBot.Commands
                 .Concat(LookupMethods(documentationRequest))
                 .Concat(LookupProperties(documentationRequest))
                 .DistinctBy(x => x.Title)
-                .GroupBy(x => x.Title.Split('.').Last())
-                .SelectMany(x =>
-                {
-                    if (x.Count() > 1)
-                    {
-                        return x;
-                    }
-                    else
-                    {
-                        x.First().Title = x.Key;
-                        return x;
-                    }
-                })
-                .Select(x =>
-                {
-                    x.Title = string.Join("", x.Title.Take(0..100));
-                    x.Message.WithEmbed(new DiscordEmbedBuilder(x.Message.Embeds[0])
-                    {
-                        Title = x.Title
-                    });
-                    return x;
-                })
                 .OrderBy(x => x.Message.Embeds[0].Footer.Text) // Sort by whichever is closest to the search query.
-                .OrderBy(x => x.Message.Embeds[0].Title.Contains("Type:"))
-                .OrderBy(x => x.Message.Embeds[0].Title.Contains("Method:"))
-                .OrderBy(x => x.Message.Embeds[0].Title.Contains("Property:"));
+                .OrderBy(x => x.Title.Contains("Type:"))
+                .OrderBy(x => x.Title.Contains("Method:"))
+                .OrderBy(x => x.Title.Contains("Property:"));
 
             return pages.Count() switch
             {
@@ -63,7 +41,7 @@ namespace DSharpPlus.DocBot.Commands
             DiscordEmbedBuilder embedBuilder;
             foreach (Type type in CachedReflection.Types)
             {
-                int matchRatio = Fuzz.TokenAbbreviationRatio(documentationRequest, type.FullName);
+                int matchRatio = Fuzz.PartialTokenAbbreviationRatio(documentationRequest, type.FullName);
                 if (matchRatio <= 80) // Ignore types with a low match ratio.
                 {
                     continue;
@@ -75,21 +53,22 @@ namespace DSharpPlus.DocBot.Commands
 
                 // We're reusing the same embed builder, so clear it.
                 embedBuilder = new();
-                embedBuilder.WithTitle($"Type: {type.FullName}");
+                embedBuilder.WithTitle($"Type: {type.Name}");
                 embedBuilder.WithFooter($"Match Percentage: {matchRatio}%"); // Haha make fun of the user for making a typo. Also known as a match percentage.
 
                 // If there are methods or properties, add them. Otherwise don't create empty fields.
                 if (methods.Any())
                 {
-                    embedBuilder.AddField("Methods", string.Join("\n", methods.Select(x => $"- {Formatter.InlineCode(CachedReflection.GetMethodSignature(x, CachedReflection.MethodSignatureFormat.IncludeReturnType | CachedReflection.MethodSignatureFormat.IncludeParameters))}").GroupBy(x => x).Select(x => x.First())));
+                    // 1024 / 3 = 341
+                    embedBuilder.AddField("Methods", string.Join('\n', CachedReflection.GetMethodNames(type, 341).Take(0..3).Select(methodSig => $"- {Formatter.InlineCode(methodSig)}")));
                 }
 
                 if (properties.Any())
                 {
-                    embedBuilder.AddField("Properties", string.Join("\n", properties.Select(x => $"- {Formatter.InlineCode(CachedReflection.ResolveGenericTypes(x.PropertyType) + " " + x.Name)}")));
+                    embedBuilder.AddField("Properties", string.Join('\n', properties.Take(0..3).Select(x => $"- {Formatter.InlineCode(CachedReflection.GetPropertySignature(x))}")));
                 }
 
-                pages.Add(new MenuPagination($"Type: {type.FullName!}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
+                pages.Add(new MenuPagination($"Type: {type.Name}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
             }
 
             return pages;
@@ -103,7 +82,7 @@ namespace DSharpPlus.DocBot.Commands
             // Iterate through all methods. Methods are grouped by overloads and indexed using their method name.
             foreach ((string methodName, MethodInfo[] methodGroup) in CachedReflection.MethodGroups)
             {
-                int matchRatio = Fuzz.TokenAbbreviationRatio(documentationRequest, methodName);
+                int matchRatio = Fuzz.PartialTokenAbbreviationRatio(documentationRequest, methodName);
                 if (matchRatio <= 80) // Ignore types with a low match ratio.
                 {
                     continue;
@@ -111,7 +90,7 @@ namespace DSharpPlus.DocBot.Commands
 
                 // We're reusing the same embed builder, so clear it.
                 embedBuilder = new();
-                embedBuilder.WithTitle($"Method: {PruneNamespace(methodName).Take(0..256)}");
+                embedBuilder.WithTitle($"Method: {string.Join("", (methodGroup[0].DeclaringType!.Name + '.' + PruneNamespace(methodName)).Take(0..256))}");
                 embedBuilder.WithFooter($"Match Percentage: {matchRatio}%"); // Haha make fun of the user for making a typo. Also known as a match percentage.
 
                 // Add the method overloads into one field by displaying it's signature.
@@ -125,8 +104,9 @@ namespace DSharpPlus.DocBot.Commands
                     }
                     stringBuilder.Append(methodSignature);
                 }
-                embedBuilder.AddField("Overloads", stringBuilder.ToString());
-                pages.Add(new MenuPagination($"Method: {methodName}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
+
+                embedBuilder.WithDescription(string.Join("\n", stringBuilder.ToString().Split('\n').OrderBy(x => x).Distinct()));
+                pages.Add(new MenuPagination($"Method: {methodGroup[0].DeclaringType!.Name}.{methodName}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
             }
 
             return pages;
@@ -140,17 +120,17 @@ namespace DSharpPlus.DocBot.Commands
             // Iterate through all properties
             foreach (PropertyInfo property in CachedReflection.Properties)
             {
-                int matchRatio = Fuzz.TokenAbbreviationRatio(documentationRequest, $"{property.DeclaringType!.FullName}.{property.Name}");
+                int matchRatio = Fuzz.PartialTokenAbbreviationRatio(documentationRequest, $"{property.DeclaringType!.FullName}.{property.Name}");
                 if (matchRatio <= 80) // Ignore types with a low match ratio.
                 {
                     continue;
                 }
 
                 embedBuilder = new();
-                embedBuilder.WithTitle($"Property: {property.DeclaringType!.FullName}.{property.Name}");
+                embedBuilder.WithTitle($"Property: {property.DeclaringType.Name}.{property.Name}");
                 embedBuilder.WithFooter($"Match Percentage: {matchRatio}%"); // Haha make fun of the user for making a typo. Also known as a match percentage.
                 embedBuilder.AddField("Type", Formatter.InlineCode(CachedReflection.ResolveGenericTypes(property.PropertyType)));
-                pages.Add(new MenuPagination($"Property: {property.DeclaringType!.FullName}.{property.Name}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
+                pages.Add(new MenuPagination($"Property: {property.DeclaringType.Name}.{property.Name}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
             }
 
             return pages;

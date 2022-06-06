@@ -12,22 +12,24 @@ namespace DSharpPlus.DocBot
     {
         public static IConfigurationRoot Configuration { get; private set; } = null!;
 
-        public static async Task Main(string[] args)
+        static Program()
         {
             // Load configuration from the json file, environment variables, and command line arguments
             ConfigurationBuilder configurationBuilder = new();
             configurationBuilder.Sources.Clear();
             configurationBuilder.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "res/config.json"), true, true);
             configurationBuilder.AddEnvironmentVariables("DSHARPPLUS_DOCBOT_");
-            configurationBuilder.AddCommandLine(args);
             Configuration = configurationBuilder.Build();
+        }
 
+        public static async Task Main()
+        {
             DiscordShardedClient shardedClient = new(new()
             {
                 AlwaysCacheMembers = false, // The bot only needs message content, not member data
                 Intents = DiscordIntents.DirectMessages | DiscordIntents.GuildMessages // Respond to commands
                     | DiscordIntents.Guilds, // CNext permission checking
-                Token = Configuration["token"] // We can only pray the user stored this securely.
+                Token = Configuration["discord_token"] // We can only pray the user stored this securely.
             });
 
             // Register CNext on each shard, in case the bot is added to thousands of servers (unlikely)
