@@ -12,29 +12,27 @@ namespace DSharpPlus.DocBot
         /// <summary>
         /// A collection of all DSharpPlus types, official extensions included.
         /// </summary>
-        public static Type[] Types { get; private set; }
+        public static Type[] Types { get; private set; } = null!;
 
         /// <summary>
         /// A collection of all DSharpPlus methods, grouped by the method name. Official extensions included.
         /// </summary>
-        public static Dictionary<string, MethodInfo[]> MethodGroups { get; private set; }
+        public static Dictionary<string, MethodInfo[]> MethodGroups { get; private set; } = null!;
 
         /// <summary>
         /// A collection of all DSharpPlus properties, grouped by the property name. Official extensions included.
         /// </summary>
-        public static PropertyInfo[] Properties { get; private set; }
+        public static PropertyInfo[] Properties { get; private set; } = null!;
 
         /// <summary>
         /// A collection of all DSharpPlus events, grouped by the event name. Official extensions included.
         /// </summary>
-        public static EventInfo[] Events { get; private set; }
+        public static EventInfo[] Events { get; private set; } = null!;
 
         /// <summary>
         /// Used by <see cref="ResolveGenericTypes(Type, StringBuilder?)"/> to convert CLR types into their C# representation.
         /// </summary>
         private static readonly CSharpCodeProvider CSharpCodeProvider = new();
-
-        static CachedReflection() => DownloadNightliesAsync().GetAwaiter().GetResult();
 
         /// <summary>
         /// Resolves generic types into a string, converting them into their C# representation.

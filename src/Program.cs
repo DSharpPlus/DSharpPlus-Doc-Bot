@@ -24,6 +24,8 @@ namespace DSharpPlus.DocBot
 
         public static async Task Main()
         {
+            await CachedReflection.DownloadNightliesAsync();
+
             DiscordShardedClient shardedClient = new(new()
             {
                 AlwaysCacheMembers = false, // The bot only needs message content, not member data
