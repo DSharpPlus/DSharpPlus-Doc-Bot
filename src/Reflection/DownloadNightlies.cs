@@ -6,23 +6,18 @@ using System.Linq;
 using System.Net.Http;
 using System.Reflection;
 using System.Runtime.Loader;
-using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Threading.Tasks;
-using System.Xml;
-using System.Xml.Linq;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Lavalink;
 using DSharpPlus.SlashCommands;
 using DSharpPlus.VoiceNext;
-using NuGet.Frameworks;
 
 namespace DSharpPlus.DocBot
 {
     public partial class CachedReflection
     {
-        private static readonly NuGetFramework CurrentFramework = NuGetFramework.Parse(Assembly.GetExecutingAssembly().GetCustomAttribute<TargetFrameworkAttribute>()!.FrameworkName);
         private static readonly HttpClient HttpClient = new()
         {
             DefaultRequestHeaders = { { "User-Agent", "DSharpPlus Docs Bot/2.0" } }
@@ -37,7 +32,7 @@ namespace DSharpPlus.DocBot
             {
                 Console.WriteLine($"Github returned a non-success status code: HTTP {getLatestActionRunResponse.StatusCode} {getLatestActionRunResponse.ReasonPhrase}");
                 Console.WriteLine("Falling back to built-in dependencies.");
-                await SetTypesThroughReflection();
+                SetTypesThroughReflection();
                 return;
             }
 
@@ -47,7 +42,7 @@ namespace DSharpPlus.DocBot
             {
                 // TODO: Use a proper logger dumbass
                 Console.WriteLine("No workflow runs found from the Github API, unable to download the latest nightly/release. Falling back to the built-in dependencies.");
-                await SetTypesThroughReflection();
+                SetTypesThroughReflection();
                 return;
             }
 
@@ -58,7 +53,7 @@ namespace DSharpPlus.DocBot
             {
                 Console.WriteLine($"Github returned a non-success status code: HTTP {getArtifactDownloadUrlResponse.StatusCode} {getArtifactDownloadUrlResponse.ReasonPhrase}");
                 Console.WriteLine("Falling back to built-in dependencies.");
-                await SetTypesThroughReflection();
+                SetTypesThroughReflection();
                 return;
             }
 
@@ -68,7 +63,7 @@ namespace DSharpPlus.DocBot
             {
                 // TODO: Use a proper logger dumbass
                 Console.WriteLine("Unable to find the latest artifact. Falling back to the built-in dependencies.");
-                await SetTypesThroughReflection();
+                SetTypesThroughReflection();
                 return;
             }
 
@@ -80,7 +75,7 @@ namespace DSharpPlus.DocBot
             {
                 Console.WriteLine($"Github returned a non-success status code: HTTP {downloadArtifactsResponse.StatusCode} {downloadArtifactsResponse.ReasonPhrase}");
                 Console.WriteLine("Falling back to built-in dependencies.");
-                await SetTypesThroughReflection();
+                SetTypesThroughReflection();
                 return;
             }
 
@@ -98,149 +93,69 @@ namespace DSharpPlus.DocBot
             File.Delete("DSharpPlus Nightlies.zip");
 
             Console.WriteLine("Downloaded the latest nightly/release. Extracting and downloading dependencies...");
-            await LoadNightliesAsync();
+            LoadNightlies();
             Console.WriteLine("Done!");
             return;
         }
 
-        private static async Task LoadNightliesAsync()
+        private static void LoadNightlies()
         {
             List<Type> types = new();
-            string previousDir = Environment.CurrentDirectory;
-            Environment.CurrentDirectory = Path.GetFullPath("DSharpPlus Nightlies");
             AssemblyLoadContext assemblyLoadContext = new("DSharpPlus Nightlies", true);
-            foreach (string fileName in Directory.GetFiles(Environment.CurrentDirectory, "*.nupkg").OrderBy(x => x))
+            foreach (string fileName in Directory.GetFiles("DSharpPlus Nightlies", "*.nupkg").OrderBy(x => x))
             {
-                string extractedDllName = await UnpackNupkgAsync(fileName);
+                string extractedDllName = UnpackNupkg("DSharpPlus Nightlies/" + fileName);
                 Console.WriteLine("Attempting to load: " + Path.GetFullPath(extractedDllName));
                 Assembly assembly = assemblyLoadContext.LoadFromAssemblyPath(Path.GetFullPath(extractedDllName));
                 types.AddRange(assembly.GetExportedTypes());
                 Console.WriteLine("Loaded " + assembly.FullName);
             }
             Types = types.ToArray();
-            Environment.CurrentDirectory = previousDir;
             SetProperties();
         }
 
-        private static async Task<string> UnpackNupkgAsync(string nupkgFile, NuGetFramework? nuGetFramework = null)
+        private static string UnpackNupkg(string nupkgFile)
         {
             string? assemblyName = null;
-            nuGetFramework ??= CurrentFramework;
 
             using ZipArchive archive = ZipFile.Open(nupkgFile, ZipArchiveMode.Read);
-            string[] frameworks = archive.Entries.Where(x => x.FullName.StartsWith("lib/", StringComparison.OrdinalIgnoreCase)).Select(x => x.FullName.Split('/')[1]).Distinct().ToArray();
-            NuGetFramework specificFramework = new FrameworkReducer().GetNearest(nuGetFramework, frameworks.Select(NuGetFramework.Parse));
-
             foreach (ZipArchiveEntry entry in archive.Entries)
             {
                 string entryExtension = Path.GetExtension(entry.Name);
                 switch (entryExtension)
                 {
-                    case ".xml":
-                    case ".dll":
-                        if (entry.FullName.StartsWith("lib/") && NuGetFramework.Parse(entry.FullName.Split('/')[1]) == specificFramework)
+                    case ".dll" when assemblyName == null:
+                        assemblyName = Path.ChangeExtension(entry.Name, ".dll");
+                        if (!File.Exists("DSharpPlus Nightlies/" + entry.Name))
                         {
-                            assemblyName = Path.ChangeExtension(entry.Name, ".dll");
-                            if (!File.Exists(entry.Name))
-                            {
-                                entry.ExtractToFile(entry.Name);
-                            }
+                            entry.ExtractToFile("DSharpPlus Nightlies/" + entry.Name);
                         }
                         break;
+                    case ".dll":
+                    case ".xml":
                     case ".nupkg":
                     case ".snupkg":
-                    case ".nuspec":
-                        if (!File.Exists(entry.Name))
+                        if (!File.Exists("DSharpPlus Nightlies/" + entry.Name))
                         {
-                            entry.ExtractToFile(entry.Name);
+                            entry.ExtractToFile("DSharpPlus Nightlies/" + entry.Name);
                         }
+                        break;
+                    default:
                         break;
                 }
             }
 
             File.Delete(nupkgFile);
-            string? nuspecFile = Path.ChangeExtension(assemblyName, ".nuspec");
-            if (nuspecFile != null && File.Exists(nuspecFile))
-            {
-                await ResolveDependenciesAsync(nuspecFile);
-                File.Delete(nuspecFile);
-            }
             return assemblyName!;
         }
 
-        private static async Task ResolveDependenciesAsync(string nuspecFile)
-        {
-            // Parse dependencies
-            XDocument nuspecDoc = XDocument.Load(XmlReader.Create(nuspecFile));
-            XElement? dependencies = nuspecDoc.Element(XName.Get("package", nuspecDoc.Root!.GetDefaultNamespace().NamespaceName))?
-                .Element(XName.Get("metadata", nuspecDoc.Root!.GetDefaultNamespace().NamespaceName))?
-                .Element(XName.Get("dependencies", nuspecDoc.Root!.GetDefaultNamespace().NamespaceName));
-            if (dependencies == null) // If the nupkg has no dependencies
-            {
-                return;
-            }
-
-            List<NuGetFramework> frameworks = new();
-            XmlReader reader = dependencies.CreateReader();
-            reader.Read();
-            while (reader.Read())
-            {
-                string? targetFramework = reader.GetAttribute("targetFramework");
-                if (targetFramework != null)
-                {
-                    frameworks.Add(NuGetFramework.Parse(targetFramework));
-                }
-
-                continue;
-            }
-
-            NuGetFramework? requiredFramework = new FrameworkReducer().GetNearest(CurrentFramework, frameworks);
-            reader = dependencies.CreateReader();
-            reader.Read();
-            while (reader.Read())
-            {
-                string? targetFramework = reader.GetAttribute("targetFramework");
-                if (targetFramework == null || NuGetFramework.Parse(targetFramework) != requiredFramework)
-                {
-                    continue;
-                }
-
-                XmlReader dependencyNodes = reader.ReadSubtree();
-                dependencyNodes.Read();
-                while (dependencyNodes.Read())
-                {
-                    if (dependencyNodes.Name == "" || dependencyNodes.NodeType == XmlNodeType.EndElement)
-                    {
-                        continue;
-                    }
-
-                    string? dependencyId = dependencyNodes.GetAttribute("id");
-                    if (dependencyId == null || File.Exists(dependencyId + ".dll") || File.Exists(dependencyId + ".nuspec"))
-                    {
-                        continue;
-                    }
-
-                    dependencyId = dependencyId.ToLowerInvariant();
-                    string dependencyVersion = dependencyNodes.GetAttribute("version")!;
-                    string dependencyUrl = $"https://api.nuget.org/v3-flatcontainer/{dependencyId}/{dependencyVersion}/{dependencyId}.{dependencyVersion}.nupkg";
-                    Console.WriteLine($"Fetching {dependencyId} v{dependencyVersion}");
-                    FileStream zipFile = File.OpenWrite(dependencyId + ".nupkg");
-                    (await HttpClient.GetStreamAsync(dependencyUrl)).CopyTo(zipFile);
-                    zipFile.Close();
-
-                    await UnpackNupkgAsync(dependencyId + ".nupkg", requiredFramework);
-                    File.Delete(dependencyId + ".nupkg");
-                }
-            }
-        }
-
         // Gather all D#+ types
-        private static Task SetTypesThroughReflection()
+        private static void SetTypesThroughReflection()
         {
             if (Directory.Exists("DSharpPlus Nightlies"))
             {
                 // Cache!
-                return LoadNightliesAsync();
+                LoadNightlies();
             }
 
             Types = typeof(DiscordClient).Assembly.ExportedTypes
@@ -252,7 +167,6 @@ namespace DSharpPlus.DocBot
             .ToArray();
 
             SetProperties();
-            return Task.CompletedTask;
         }
 
         private static void SetProperties()
