@@ -5,6 +5,7 @@ using System.IO.Compression;
 using System.Linq;
 using System.Net.Http;
 using System.Reflection;
+using System.Runtime.Loader;
 using System.Runtime.Versioning;
 using System.Text.Json;
 using System.Threading.Tasks;
@@ -107,11 +108,12 @@ namespace DSharpPlus.DocBot
             List<Type> types = new();
             string previousDir = Environment.CurrentDirectory;
             Environment.CurrentDirectory = Path.GetFullPath("DSharpPlus Nightlies");
+            AssemblyLoadContext assemblyLoadContext = new("DSharpPlus Nightlies", true);
             foreach (string fileName in Directory.GetFiles(Environment.CurrentDirectory, "*.nupkg").OrderBy(x => x))
             {
                 string extractedDllName = await UnpackNupkgAsync(fileName);
                 Console.WriteLine("Attempting to load: " + Path.GetFullPath(extractedDllName));
-                Assembly assembly = Assembly.LoadFrom(Path.GetFullPath(extractedDllName));
+                Assembly assembly = assemblyLoadContext.LoadFromAssemblyPath(Path.GetFullPath(extractedDllName));
                 types.AddRange(assembly.GetExportedTypes());
                 Console.WriteLine("Loaded " + assembly.FullName);
             }
@@ -139,13 +141,19 @@ namespace DSharpPlus.DocBot
                         if (entry.FullName.StartsWith("lib/") && NuGetFramework.Parse(entry.FullName.Split('/')[1]) == specificFramework)
                         {
                             assemblyName = Path.ChangeExtension(entry.Name, ".dll");
-                            entry.ExtractToFile(entry.Name);
+                            if (!File.Exists(entry.Name))
+                            {
+                                entry.ExtractToFile(entry.Name);
+                            }
                         }
                         break;
                     case ".nupkg":
                     case ".snupkg":
                     case ".nuspec":
-                        entry.ExtractToFile(entry.Name);
+                        if (!File.Exists(entry.Name))
+                        {
+                            entry.ExtractToFile(entry.Name);
+                        }
                         break;
                 }
             }
