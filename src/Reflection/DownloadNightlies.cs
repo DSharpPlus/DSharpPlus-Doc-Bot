@@ -101,16 +101,27 @@ namespace DSharpPlus.DocBot
         private static void LoadNightlies()
         {
             List<Type> types = new();
+            string previousDir = Environment.CurrentDirectory;
+            Environment.CurrentDirectory = Path.GetFullPath("DSharpPlus Nightlies");
             AssemblyLoadContext assemblyLoadContext = new("DSharpPlus Nightlies", true);
-            foreach (string fileName in Directory.GetFiles("DSharpPlus Nightlies", "*.nupkg").OrderBy(x => x))
+            foreach (string fileName in Directory.GetFiles(Environment.CurrentDirectory, "*.nupkg").OrderBy(x => x)) // Order by is important as the dependencies rely on it
             {
-                string extractedDllName = UnpackNupkg("DSharpPlus Nightlies/" + fileName);
+                if (fileName.EndsWith(".Test.dll"))
+                {
+                    // We don't want to load redundant test files
+                    continue;
+                }
+
+                string extractedDllName = UnpackNupkg(fileName);
                 Console.WriteLine("Attempting to load: " + Path.GetFullPath(extractedDllName));
-                Assembly assembly = assemblyLoadContext.LoadFromAssemblyPath(Path.GetFullPath(extractedDllName));
+
+                Assembly assembly = assemblyLoadContext.LoadFromStream(File.OpenRead(extractedDllName), File.OpenRead(Path.ChangeExtension(fileName, ".snupkg")));
                 types.AddRange(assembly.GetExportedTypes());
-                Console.WriteLine("Loaded " + assembly.FullName);
+
+                Console.WriteLine("Loaded " + assembly.GetName().Name + " v" + assembly.GetName().Version);
             }
             Types = types.ToArray();
+            Environment.CurrentDirectory = previousDir;
             SetProperties();
         }
 
@@ -126,18 +137,18 @@ namespace DSharpPlus.DocBot
                 {
                     case ".dll" when assemblyName == null:
                         assemblyName = Path.ChangeExtension(entry.Name, ".dll");
-                        if (!File.Exists("DSharpPlus Nightlies/" + entry.Name))
+                        if (!File.Exists(entry.Name))
                         {
-                            entry.ExtractToFile("DSharpPlus Nightlies/" + entry.Name);
+                            entry.ExtractToFile(entry.Name);
                         }
                         break;
                     case ".dll":
                     case ".xml":
                     case ".nupkg":
                     case ".snupkg":
-                        if (!File.Exists("DSharpPlus Nightlies/" + entry.Name))
+                        if (!File.Exists(entry.Name))
                         {
-                            entry.ExtractToFile("DSharpPlus Nightlies/" + entry.Name);
+                            entry.ExtractToFile(entry.Name);
                         }
                         break;
                     default:
@@ -156,15 +167,16 @@ namespace DSharpPlus.DocBot
             {
                 // Cache!
                 LoadNightlies();
+                return;
             }
 
-            Types = typeof(DiscordClient).Assembly.ExportedTypes
-            .Concat(typeof(CommandsNextExtension).Assembly.ExportedTypes)
-            .Concat(typeof(InteractivityExtension).Assembly.ExportedTypes)
-            .Concat(typeof(LavalinkExtension).Assembly.ExportedTypes)
-            .Concat(typeof(SlashCommandsExtension).Assembly.ExportedTypes)
-            .Concat(typeof(VoiceNextExtension).Assembly.ExportedTypes)
-            .ToArray();
+            //Types = typeof(DiscordClient).Assembly.ExportedTypes
+            //.Concat(typeof(CommandsNextExtension).Assembly.ExportedTypes)
+            //.Concat(typeof(InteractivityExtension).Assembly.ExportedTypes)
+            //.Concat(typeof(LavalinkExtension).Assembly.ExportedTypes)
+            //.Concat(typeof(SlashCommandsExtension).Assembly.ExportedTypes)
+            //.Concat(typeof(VoiceNextExtension).Assembly.ExportedTypes)
+            //.ToArray();
 
             SetProperties();
         }
