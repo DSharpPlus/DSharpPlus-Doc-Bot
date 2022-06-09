@@ -170,13 +170,13 @@ namespace DSharpPlus.DocBot
                 return;
             }
 
-            //Types = typeof(DiscordClient).Assembly.ExportedTypes
-            //.Concat(typeof(CommandsNextExtension).Assembly.ExportedTypes)
-            //.Concat(typeof(InteractivityExtension).Assembly.ExportedTypes)
-            //.Concat(typeof(LavalinkExtension).Assembly.ExportedTypes)
-            //.Concat(typeof(SlashCommandsExtension).Assembly.ExportedTypes)
-            //.Concat(typeof(VoiceNextExtension).Assembly.ExportedTypes)
-            //.ToArray();
+            Types = typeof(DiscordClient).Assembly.ExportedTypes
+                .Concat(typeof(CommandsNextExtension).Assembly.ExportedTypes)
+                .Concat(typeof(InteractivityExtension).Assembly.ExportedTypes)
+                .Concat(typeof(LavalinkExtension).Assembly.ExportedTypes)
+                .Concat(typeof(SlashCommandsExtension).Assembly.ExportedTypes)
+                .Concat(typeof(VoiceNextExtension).Assembly.ExportedTypes)
+                .ToArray();
 
             SetProperties();
         }
