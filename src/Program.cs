@@ -1,5 +1,6 @@
-﻿using System.IO;
+using System.IO;
 using System.Threading.Tasks;
+using DocBot.src.XMLDocs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Executors;
 using DSharpPlus.DocBot.Events;
@@ -12,18 +13,16 @@ namespace DSharpPlus.DocBot
     {
         public static IConfigurationRoot Configuration { get; private set; } = null!;
 
-        static Program()
+        public static async Task Main(string[] args)
         {
             // Load configuration from the json file, environment variables, and command line arguments
             ConfigurationBuilder configurationBuilder = new();
             configurationBuilder.Sources.Clear();
             configurationBuilder.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "res/config.json"), true, true);
             configurationBuilder.AddEnvironmentVariables("DSHARPPLUS_DOCBOT_");
+            configurationBuilder.AddCommandLine(args);
             Configuration = configurationBuilder.Build();
-        }
 
-        public static async Task Main()
-        {
             await CachedReflection.DownloadNightliesAsync();
 
             DiscordShardedClient shardedClient = new(new()
