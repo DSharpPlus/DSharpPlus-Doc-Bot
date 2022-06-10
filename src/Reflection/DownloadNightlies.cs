@@ -8,6 +8,7 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
 using System.Threading.Tasks;
+using DocBot.src.XMLDocs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Lavalink;
@@ -119,6 +120,13 @@ namespace DSharpPlus.DocBot
                 types.AddRange(assembly.ExportedTypes);
 
                 Console.WriteLine("Loaded " + assembly.GetName().Name + " v" + assembly.GetName().Version);
+
+                if (!extractedDllName.Contains("Test"))
+                {
+                    Console.WriteLine($"Attempting to load xmlDocs for assembly {assembly.FullName}");
+                    assembly.LoadXmlDocFile(extractedDllName.Replace(".dll", ".xml"));
+                    Console.WriteLine($"Loading XMLDocs done for assembly {assembly.FullName}"); 
+                }
             }
             Types = types.ToArray();
             Environment.CurrentDirectory = previousDir;
@@ -129,33 +137,34 @@ namespace DSharpPlus.DocBot
         {
             string? assemblyName = null;
 
-            using ZipArchive archive = ZipFile.Open(nupkgFile, ZipArchiveMode.Read);
-            foreach (ZipArchiveEntry entry in archive.Entries)
+            using (ZipArchive archive = ZipFile.Open(nupkgFile, ZipArchiveMode.Read))
             {
-                string entryExtension = Path.GetExtension(entry.Name);
-                switch (entryExtension)
+                foreach (ZipArchiveEntry entry in archive.Entries)
                 {
-                    case ".dll" when assemblyName == null:
-                        assemblyName = Path.ChangeExtension(entry.Name, ".dll");
-                        if (!File.Exists(entry.Name))
-                        {
-                            entry.ExtractToFile(entry.Name);
-                        }
-                        break;
-                    case ".dll":
-                    case ".xml":
-                    case ".nupkg":
-                    case ".snupkg":
-                        if (!File.Exists(entry.Name))
-                        {
-                            entry.ExtractToFile(entry.Name);
-                        }
-                        break;
-                    default:
-                        break;
+                    string entryExtension = Path.GetExtension(entry.Name);
+                    switch (entryExtension)
+                    {
+                        case ".dll" when assemblyName == null:
+                            assemblyName = Path.ChangeExtension(entry.Name, ".dll");
+                            if (!File.Exists(entry.Name))
+                            {
+                                entry.ExtractToFile(entry.Name);
+                            }
+                            break;
+                        case ".dll":
+                        case ".xml":
+                        case ".nupkg":
+                        case ".snupkg":
+                            if (!File.Exists(entry.Name))
+                            {
+                                entry.ExtractToFile(entry.Name);
+                            }
+                            break;
+                        default:
+                            break;
+                    }
                 }
             }
-
             File.Delete(nupkgFile);
             return assemblyName!;
         }

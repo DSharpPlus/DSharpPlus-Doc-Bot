@@ -5,6 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
+using DocBot.src.XMLDocs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.DocBot.Pagination;
@@ -69,6 +70,13 @@ namespace DSharpPlus.DocBot.Commands
                 if (properties.Any())
                 {
                     embedBuilder.AddField("Properties", string.Join('\n', properties.Take(0..3).Select(x => $"- {Formatter.InlineCode(CachedReflection.GetPropertySignature(x))}")));
+                }
+
+                XMLMember? docs = type.GetDocs();
+                if (docs is not null)
+                {
+                    embedBuilder.AddField("Documentation", (docs.Summary is null ? "" : Formatter.Bold("Summary: ") + docs.Summary) + "\n" +
+                        (docs.Remarks is null ? "" : Formatter.Bold("Remarks: ") + docs.Remarks));
                 }
 
                 pages.Add(new MenuPagination($"Type: {type.Name}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
