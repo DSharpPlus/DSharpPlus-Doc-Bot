@@ -116,7 +116,7 @@ namespace DSharpPlus.DocBot
                 Console.WriteLine("Attempting to load: " + Path.GetFullPath(extractedDllName));
 
                 Assembly assembly = assemblyLoadContext.LoadFromStream(File.OpenRead(extractedDllName), File.OpenRead(Path.ChangeExtension(fileName, ".snupkg")));
-                types.AddRange(assembly.GetExportedTypes());
+                types.AddRange(assembly.ExportedTypes);
 
                 Console.WriteLine("Loaded " + assembly.GetName().Name + " v" + assembly.GetName().Version);
             }
@@ -186,7 +186,7 @@ namespace DSharpPlus.DocBot
             // Gather all D#+ methods, grouping them by method name and grouping them by method overloads
             MethodGroups = Types
                 .SelectMany(type => type
-                    .GetMethods(BindingFlags.Public | BindingFlags.Instance | BindingFlags.Static)
+                    .GetMethods(BindingFlags.Public)
                     .Where(method =>
                         !method.IsSpecialName && // Drop these stupid getters and setters.
                         (method.GetBaseDefinition().DeclaringType?.Namespace?.StartsWith("DSharpPlus") ?? false))) // Drop methods not implemented by us (aka object and Enum methods)

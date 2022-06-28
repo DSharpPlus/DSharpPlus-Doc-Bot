@@ -57,7 +57,7 @@ namespace DSharpPlus.DocBot
             {
                 // GetTypeOutput returns the full namespace for the type, which is why we split by `.` and take the last element (which should be the type name)
                 // We also append a `?` to the end of the type name to represent the nullable type.
-                stringBuilder.Append(CSharpCodeProvider.GetTypeOutput(new(underlyingNullableType)).Split('.').Last() + "?");
+                stringBuilder.Append(GetFriendlyTypeName(underlyingNullableType) + "?");
             }
 
             // Test if the type is a generic type.
@@ -82,10 +82,12 @@ namespace DSharpPlus.DocBot
             else
             {
                 // As mentioned earlier, we use GetTypeOutput to get the full namespace for the type. We only want the type name.
-                stringBuilder.Append(CSharpCodeProvider.GetTypeOutput(new(type)).Split('.').Last());
+                stringBuilder.Append(GetFriendlyTypeName(type));
             }
 
             return stringBuilder.ToString();
         }
+
+        public static string GetFriendlyTypeName(Type type) => CSharpCodeProvider.GetTypeOutput(new(type)).Split('.').Last();
     }
 }

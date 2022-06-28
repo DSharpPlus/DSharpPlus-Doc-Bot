@@ -1,5 +1,6 @@
 using System;
 using System.Collections.Generic;
+using System.Diagnostics.CodeAnalysis;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -12,13 +13,15 @@ using FuzzySharp;
 
 namespace DSharpPlus.DocBot.Commands
 {
-    public sealed class DocumentationLookup : BaseCommandModule
+    public sealed class DocumentationLookupCommand : BaseCommandModule
     {
-        [Command("docs"), Description("Look up documentation for a command."), RequireBotPermissions(Permissions.SendMessages | Permissions.EmbedLinks)]
-        public Task DocumentationLookupAsync(CommandContext context, [RemainingText] string documentationRequest)
+        [Command("docs"), Description("Look up documentation for a command.")]
+        [RequireBotPermissions(Permissions.SendMessages | Permissions.EmbedLinks), SuppressMessage("Roslyn", "CA1822", Justification = "CommandsNext cannot comprehend the power behind static commands.")]
+        public Task DocumentationLookupAsync(CommandContext context, [Description("Does reflection magic to find the nearest type, event, method or property that's closest to the documentation request. Includes XML docs and a link to the source code on Github."), RemainingText] string documentationRequest)
         {
             // Search types, methods and properties and order by relevance.
             IEnumerable<MenuPagination> pages = LookupTypes(documentationRequest)
+                // TODO: .Concat(LookupEvents(documentationRequest))
                 .Concat(LookupMethods(documentationRequest))
                 .Concat(LookupProperties(documentationRequest))
                 .DistinctBy(x => x.Title)
@@ -31,7 +34,7 @@ namespace DSharpPlus.DocBot.Commands
             {
                 0 => context.RespondAsync("No documentation found."),
                 1 => context.RespondAsync(pages.First().Message),
-                _ => MenuPaginator.SendNewPaginationAsync(context.User, context.Channel, pages.Take(new Range(0, 25)).ToArray()),
+                _ => MenuPaginator.SendNewPaginationAsync(context.User, context.Channel, pages.Take(0..25).ToArray()),
             };
         }
 

@@ -11,22 +11,21 @@ namespace DSharpPlus.DocBot
     public sealed class Program
     {
         public static IConfigurationRoot Configuration { get; private set; } = null!;
+        public static DiscordShardedClient Client { get; private set; } = null!;
 
-        static Program()
+        public static async Task Main(string[] args)
         {
             // Load configuration from the json file, environment variables, and command line arguments
             ConfigurationBuilder configurationBuilder = new();
             configurationBuilder.Sources.Clear();
             configurationBuilder.AddJsonFile(Path.Combine(Directory.GetCurrentDirectory(), "res/config.json"), true, true);
             configurationBuilder.AddEnvironmentVariables("DSHARPPLUS_DOCBOT_");
+            configurationBuilder.AddCommandLine(args);
             Configuration = configurationBuilder.Build();
-        }
 
-        public static async Task Main()
-        {
             await CachedReflection.DownloadNightliesAsync();
 
-            DiscordShardedClient shardedClient = new(new()
+            Client = new(new()
             {
                 AlwaysCacheMembers = false, // The bot only needs message content, not member data
                 Intents = DiscordIntents.DirectMessages | DiscordIntents.GuildMessages // Respond to commands
@@ -35,8 +34,9 @@ namespace DSharpPlus.DocBot
             });
 
             // Register CNext on each shard, in case the bot is added to thousands of servers (unlikely)
-            foreach ((int _, CommandsNextExtension commandsNextExtension) in await shardedClient.UseCommandsNextAsync(new CommandsNextConfiguration()
+            foreach ((int _, CommandsNextExtension commandsNextExtension) in await Client.UseCommandsNextAsync(new CommandsNextConfiguration()
             {
+                EnableDefaultHelp = false, // We'll handle this ourselves
                 UseDefaultCommandHandler = false, // We use our own command handler due to the prefix being the command itself
                 CommandExecutor = new AsynchronousCommandExecutor() // Task.Run lmao
             }))
@@ -49,16 +49,16 @@ namespace DSharpPlus.DocBot
             }
 
             // Change the status to "Listening"
-            shardedClient.Ready += Ready.ReadyAsync;
+            Client.Ready += Ready.ReadyAsync;
 
             // Our command handler
-            shardedClient.MessageCreated += MessageCreated.MessageCreatedAsync;
+            Client.MessageCreated += MessageCreated.MessageCreatedAsync;
 
             // Pagination
-            shardedClient.ComponentInteractionCreated += MenuPaginator.PaginateAsync;
+            Client.ComponentInteractionCreated += MenuPaginator.PaginateAsync;
 
             // Connect to Discord praying there aren't any breaking changes
-            await shardedClient.StartAsync();
+            await Client.StartAsync();
 
             // And now we wait for the heat death of the universe
             await Task.Delay(-1);

@@ -18,17 +18,20 @@ namespace DSharpPlus.DocBot.Events
                 return Task.CompletedTask;
             }
 
-            // Ensure the message contains something to search and isn't a random bot ping.
-            string fullCommand = $"docs {eventArgs.Message.Content[client.CurrentUser.Mention.Length..]}".Trim();
-            if (fullCommand == "docs")
-            {
-                // TODO: Help command
-                return Task.CompletedTask;
-            }
-
-            // Grab CNext and execute the command.
+            // Grab CNext
             CommandsNextExtension commandsNext = client.GetCommandsNext();
-            return commandsNext.ExecuteCommandAsync(commandsNext.CreateContext(eventArgs.Message, client.CurrentUser.Mention, commandsNext.FindCommand(fullCommand, out string? rawArguments), rawArguments));
+
+            // Remove the mention...
+            string fullCommand = eventArgs.Message.Content[client.CurrentUser.Mention.Length..].Trim();
+
+            // See if the message is an actual command...
+            Command? command = commandsNext.FindCommand(fullCommand, out string? arguments);
+
+            // It's not, so try seaching up docs instead
+            command ??= commandsNext.FindCommand("docs " + fullCommand, out arguments);
+
+            // Off with his head! (Execute the command)
+            return commandsNext.ExecuteCommandAsync(commandsNext.CreateContext(eventArgs.Message, client.CurrentUser.Mention, command, arguments));
         }
     }
 }
