@@ -123,6 +123,11 @@ namespace DocBot.src.XMLDocs
                 memberName = member.DeclaringType?.FullName + "." + member.Name;
             }
 
+			if (!memberLists.ContainsKey(assembly))
+			{
+				return null;
+			}
+
             switch (member.MemberType)
             {
                 case MemberTypes.Constructor:
