@@ -1,12 +1,12 @@
 using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Reflection;
 using System.Text.RegularExpressions;
 using System.Xml.Linq;
-using System.Linq;
 
-namespace DocBot.src.XMLDocs
+namespace DSharpPlus.DocBot.XMLDocs
 {
     public static class ReflectionExtensions
     {
@@ -123,10 +123,10 @@ namespace DocBot.src.XMLDocs
                 memberName = member.DeclaringType?.FullName + "." + member.Name;
             }
 
-			if (!memberLists.ContainsKey(assembly))
-			{
-				return null;
-			}
+            if (!memberLists.ContainsKey(assembly!))
+            {
+                return null;
+            }
 
             switch (member.MemberType)
             {
@@ -135,7 +135,7 @@ namespace DocBot.src.XMLDocs
                     goto case MemberTypes.Method; //fall through
                 case MemberTypes.Method:
                     prefixCode = 'M';
-                    string paramTypesList = string.Join(",", 
+                    string paramTypesList = string.Join(",",
                         ((MethodBase)member)
                             .GetParameters()
                             .Cast<ParameterInfo>()

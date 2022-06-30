@@ -5,10 +5,10 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using System.Threading.Tasks;
-using DocBot.src.XMLDocs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Attributes;
 using DSharpPlus.DocBot.Pagination;
+using DSharpPlus.DocBot.XMLDocs;
 using DSharpPlus.Entities;
 using FuzzySharp;
 
@@ -22,7 +22,7 @@ namespace DSharpPlus.DocBot.Commands
         {
             // Search types, methods and properties and order by relevance.
             IEnumerable<MenuPagination> pages = LookupTypes(documentationRequest)
-                // TODO: .Concat(LookupEvents(documentationRequest))
+                .Concat(LookupEvents(documentationRequest))
                 .Concat(LookupMethods(documentationRequest))
                 .Concat(LookupProperties(documentationRequest))
                 .DistinctBy(x => x.Title)
@@ -142,6 +142,30 @@ namespace DSharpPlus.DocBot.Commands
                 embedBuilder.WithFooter($"Match Percentage: {matchRatio}%"); // Haha make fun of the user for making a typo. Also known as a match percentage.
                 embedBuilder.AddField("Type", Formatter.InlineCode(CachedReflection.ResolveGenericTypes(property.PropertyType)));
                 pages.Add(new MenuPagination($"Property: {property.DeclaringType.Name}.{property.Name}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
+            }
+
+            return pages;
+        }
+
+        private static IEnumerable<MenuPagination> LookupEvents(string documentationRequest)
+        {
+            List<MenuPagination> pages = new();
+            DiscordEmbedBuilder embedBuilder;
+
+            // Iterate through all events
+            foreach (EventInfo eventInfo in CachedReflection.Events)
+            {
+                int matchRatio = Fuzz.PartialTokenAbbreviationRatio(documentationRequest, $"{eventInfo.DeclaringType!.FullName}.{eventInfo.Name}");
+                if (matchRatio <= 80) // Ignore types with a low match ratio.
+                {
+                    continue;
+                }
+
+                embedBuilder = new();
+                embedBuilder.WithTitle($"Event: {eventInfo.DeclaringType.Name}.{eventInfo.Name}");
+                embedBuilder.WithFooter($"Match Percentage: {matchRatio}%"); // Haha make fun of the user for making a typo. Also known as a match percentage.
+                embedBuilder.AddField("Type", Formatter.InlineCode(CachedReflection.ResolveGenericTypes(eventInfo.EventHandlerType!)));
+                pages.Add(new MenuPagination($"Event: {eventInfo.DeclaringType.Name}.{eventInfo.Name}", new DiscordMessageBuilder().WithEmbed(embedBuilder)));
             }
 
             return pages;

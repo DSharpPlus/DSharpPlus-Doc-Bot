@@ -1,6 +1,5 @@
 using System.IO;
 using System.Threading.Tasks;
-using DocBot.src.XMLDocs;
 using DSharpPlus.CommandsNext;
 using DSharpPlus.CommandsNext.Executors;
 using DSharpPlus.DocBot.Events;

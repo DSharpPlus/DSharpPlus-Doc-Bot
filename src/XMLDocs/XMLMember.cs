@@ -1,6 +1,6 @@
 using System.Collections.Generic;
 
-namespace DocBot.src.XMLDocs
+namespace DSharpPlus.DocBot.XMLDocs
 {
     public class XMLMember
     {

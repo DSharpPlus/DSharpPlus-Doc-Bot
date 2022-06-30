@@ -8,8 +8,8 @@ using System.Reflection;
 using System.Runtime.Loader;
 using System.Text.Json;
 using System.Threading.Tasks;
-using DocBot.src.XMLDocs;
 using DSharpPlus.CommandsNext;
+using DSharpPlus.DocBot.XMLDocs;
 using DSharpPlus.Interactivity;
 using DSharpPlus.Lavalink;
 using DSharpPlus.SlashCommands;
@@ -125,7 +125,7 @@ namespace DSharpPlus.DocBot
                 {
                     Console.WriteLine($"Attempting to load xmlDocs for assembly {assembly.FullName}");
                     assembly.LoadXmlDocFile(extractedDllName.Replace(".dll", ".xml"));
-                    Console.WriteLine($"Loading XMLDocs done for assembly {assembly.FullName}"); 
+                    Console.WriteLine($"Loading XMLDocs done for assembly {assembly.FullName}");
                 }
             }
             Types = types.ToArray();
