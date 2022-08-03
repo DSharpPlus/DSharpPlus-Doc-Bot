@@ -29,10 +29,7 @@ namespace DSharpPlusDocs
 {
     public static class Utils
     {
-        public static IEnumerable<T> RandomShuffle<T>(this IEnumerable<T> source)
-        {
-            return source.Select(t => new { Index = Guid.NewGuid(), Value = t }).OrderBy(p => p.Index).Select(p => p.Value);
-        }
+        public static IEnumerable<T> RandomShuffle<T>(this IEnumerable<T> source) => source.Select(t => new { Index = Guid.NewGuid(), Value = t }).OrderBy(p => p.Index).Select(p => p.Value);
 
         public static string BuildType(Type type)
         {
@@ -50,14 +47,11 @@ namespace DSharpPlusDocs
             return GetTypeName(type, typeName, typeGeneric);
         }
 
-        private static string GetTypeName(Type type, string name, string generic)
-        {
-            return Nullable.GetUnderlyingType(type) != null
+        private static string GetTypeName(Type type, string name, string generic) => Nullable.GetUnderlyingType(type) != null
                 ? $"{generic}?"
                 : type.IsByRef
                 ? BuildType(type.GetElementType())
                 : Aliases.ContainsKey(type) ? Aliases[type] : $"{name}{(string.IsNullOrEmpty(generic) ? "" : $"<{generic}>")}";
-        }
 
         private static readonly Dictionary<Type, string> Aliases = new()
         {

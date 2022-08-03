@@ -30,7 +30,7 @@ namespace DSharpPlusDocs.Handlers
     public class QueryHandler
     {
         public Cache Cache { get; private set; }
-        public static string DocsBaseUrl { get; set; } = "https://dsharpplus.emzi0767.com/";
+        public static string DocsBaseUrl { get; set; } = "https://dsharpplus.github.io/";
 
         public QueryHandler() => Cache = new Cache();
 
