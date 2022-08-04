@@ -3,3 +3,5 @@ bin/
 obj/
 logs/
 DSharpPlus Nightlies/
+/Properties
+/.vs
