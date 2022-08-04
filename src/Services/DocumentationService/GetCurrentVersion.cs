@@ -24,7 +24,7 @@ namespace DSharpPlus.DocBot.Services
         /// <summary>
         /// The last loaded assembly's informational version.
         /// </summary>
-        private string? CurrentVersion { get; set; }
+        private IEnumerable<AssemblyLoadInfo>? LoadedAssemblies { get; set; }
 
         private IReadOnlyDictionary<string, Page> Documentation { get; set; } = new Dictionary<string, Page>();
 
@@ -42,26 +42,39 @@ namespace DSharpPlus.DocBot.Services
             ReloadAsync().GetAwaiter().GetResult();
         }
 
-        public string? GetCurrentVersion() => CurrentVersion;
+        public IEnumerable<AssemblyLoadInfo>? GetLoadedAssemblies() => LoadedAssemblies;
 
         public async Task ReloadAsync()
         {
+            IEnumerable<AssemblyLoadInfo>? assemblies;
             if (!await AssemblyFetcher.CheckForUpdateAsync())
             {
-                Logger.LogInformation("No update found.");
+                if (Documentation == null || Documentation.Count == 0)
+                {
+                    Logger.LogWarning("Unable to load documentation on startup. Attempting to load from cache.");
+                    assemblies = AssemblyFetcher.LoadCache();
+                }
+                else
+                {
+                    Logger.LogInformation("No update found.");
+                    return;
+                }
+            }
+            else if (!AssemblyFetcher.TryFetch(out assemblies))
+            {
+                Logger.LogError("Failed to fetch assemblies. Attempting to load from cache.");
+                assemblies = AssemblyFetcher.LoadCache();
+            }
+
+            if (assemblies == null)
+            {
+                Logger.LogCritical("Unable to fetch assemblies and the cache is empty or missing. Bot is expected to be unusable.");
                 return;
             }
-            else if (!AssemblyFetcher.TryFetch(out IEnumerable<AssemblyLoadInfo>? assemblies))
-            {
-                Logger.LogError("Failed to fetch assemblies.");
-            }
-            else
-            {
-                CurrentVersion = assemblies.Last().Version;
 
-                // This is the worst thing ever.
-                Documentation = FormatDocumentation(assemblies.SelectMany(assembly => XmlMemberInfo.Parse(assembly.Assembly, assemblies.Select(a => a.Assembly), assembly.XmlDocPath)));
-            }
+            LoadedAssemblies = assemblies;
+            // This is the worst thing ever. I'm sorry, performance geeks.
+            Documentation = FormatDocumentation(assemblies.SelectMany(assembly => XmlMemberInfo.Parse(assembly.Assembly, assemblies.Select(a => a.Assembly), assembly.XmlDocPath)));
         }
     }
 }

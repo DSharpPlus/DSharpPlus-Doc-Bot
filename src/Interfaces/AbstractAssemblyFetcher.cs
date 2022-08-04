@@ -83,7 +83,7 @@ namespace DSharpPlus.DocBot.Interfaces
             List<AssemblyLoadInfo> assemblies = new();
             string currentDirectory = Environment.CurrentDirectory;
 
-            foreach (string file in assembliesToLoad.OrderBy(x => x))
+            foreach (string file in assembliesToLoad)
             {
                 if (ignoreFileRegex != null && ignoreFileRegex.IsMatch(file))
                 {
@@ -115,6 +115,17 @@ namespace DSharpPlus.DocBot.Interfaces
 
             Environment.CurrentDirectory = currentDirectory;
             return assemblies;
+        }
+
+        public IEnumerable<AssemblyLoadInfo>? LoadCache()
+        {
+            if (!Directory.Exists(CacheDirectory))
+            {
+                Logger.LogDebug("Cache directory {CacheDirectory} does not exist.", CacheDirectory);
+                return null;
+            }
+
+            return LoadLocalAssemblies();
         }
     }
 }

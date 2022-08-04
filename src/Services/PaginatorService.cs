@@ -6,6 +6,7 @@ using System.Timers;
 using DSharpPlus.DocBot.Interfaces;
 using DSharpPlus.DocBot.Types;
 using DSharpPlus.Entities;
+using DSharpPlus.Exceptions;
 using Microsoft.Extensions.Configuration;
 
 namespace DSharpPlus.DocBot.Services
@@ -83,9 +84,13 @@ namespace DSharpPlus.DocBot.Services
                 {
                     if (paginator.CurrentMessage != null)
                     {
-                        paginator.CurrentMessage = paginator.CurrentMessage!.Flags?.HasMessageFlag(MessageFlags.Ephemeral) ?? false
-                            ? await paginator.Interaction!.GetOriginalResponseAsync()
-                            : await paginator.CurrentMessage.Channel.GetMessageAsync(paginator.CurrentMessage.Id);
+                        try
+                        {
+                            paginator.CurrentMessage = paginator.CurrentMessage!.Flags?.HasMessageFlag(MessageFlags.Ephemeral) ?? false
+                                ? await paginator.Interaction!.GetOriginalResponseAsync()
+                                : await paginator.CurrentMessage.Channel.GetMessageAsync(paginator.CurrentMessage.Id);
+                        }
+                        catch (DiscordException) { }
                     }
                     await RemovePaginatorAsync(paginator.Id, true);
                 }

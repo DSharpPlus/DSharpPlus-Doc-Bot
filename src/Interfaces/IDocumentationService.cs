@@ -7,7 +7,7 @@ namespace DSharpPlus.DocBot.Interfaces
     public interface IDocumentationService
     {
         IEnumerable<Page> Search(string searchQuery);
-        string? GetCurrentVersion();
+        IEnumerable<AssemblyLoadInfo>? GetLoadedAssemblies();
         Task ReloadAsync();
     }
 }

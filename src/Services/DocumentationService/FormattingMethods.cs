@@ -50,7 +50,7 @@ namespace DSharpPlus.DocBot.Services
 
                 page.Embed.Title = memberInfo.Name;
                 page.Embed.Color = new DiscordColor(Configuration.GetValue("discord:embed:color", "#323232"));
-                if (CurrentVersion == null)
+                if (LoadedAssemblies == null)
                 {
                     page.Content = "Warning: Unable to fetch the latest version of the assembly from Github. Documentation may be outdated or incorrect.";
                 }

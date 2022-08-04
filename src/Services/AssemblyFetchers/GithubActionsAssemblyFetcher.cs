@@ -18,6 +18,7 @@ namespace DSharpPlus.DocBot.Services.AssemblyFetchers
         private string LastVersionFile { get; init; } = Path.Join(Path.GetTempPath(), "DocBot Last Run Version.txt");
         private ulong CurrentActionsRunNumber { get; set; }
         private string? LatestUpdateUrl { get; set; }
+        private ulong LatestUpdateNumber { get; set; }
 
         public GithubActionsAssemblyFetcher(IConfiguration configuration, ILogger<GithubActionsAssemblyFetcher> logger) : base(configuration, logger)
         {
@@ -73,6 +74,7 @@ namespace DSharpPlus.DocBot.Services.AssemblyFetchers
 
             Logger.LogInformation("Latest run number ({NewRunNumber:N0}) differs from the current run number ({OldRunNumber:N0}). Update available.", runNumberJson.GetUInt64().ToString("N0"), CurrentActionsRunNumber.ToString("N0") ?? "None");
             LatestUpdateUrl = artifactsUrl.GetString();
+            LatestUpdateNumber = runNumberJson.GetUInt64();
             return true;
         }
 
@@ -99,7 +101,16 @@ namespace DSharpPlus.DocBot.Services.AssemblyFetchers
                 return false;
             }
 
-            return TryFetch(downloadUrl.GetString()!, out assemblies);
+            if (TryFetch(downloadUrl.GetString()!, out assemblies))
+            {
+                CurrentActionsRunNumber = LatestUpdateNumber;
+                File.WriteAllLines(LastVersionFile, new[] { CurrentActionsRunNumber.ToString(CultureInfo.InvariantCulture) });
+                return true;
+            }
+            else
+            {
+                return false;
+            }
         }
     }
 }

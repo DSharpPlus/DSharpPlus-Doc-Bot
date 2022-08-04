@@ -70,7 +70,7 @@ namespace DSharpPlus.DocBot.Services.AssemblyFetchers
             // Zip file
             if (responseMessage.Content.Headers.ContentType.MediaType == "application/zip" || responseMessage.Content.Headers.ContentType.MediaType == "application/x-zip-compressed" || responseMessage.Content.Headers.ContentDisposition!.FileName!.EndsWith(".zip"))
             {
-                assemblies = LoadLocalAssemblies(HandleZipFile(responseMessage));
+                assemblies = LoadLocalAssemblies(HandleZipFile(responseMessage).OrderBy(x => x));
                 return true;
             }
 

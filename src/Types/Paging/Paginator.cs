@@ -120,7 +120,7 @@ namespace DSharpPlus.DocBot.Types
             int endIndex = CurrentPage + pageSelection;
             for (int i = CurrentPage; i < endIndex; i++)
             {
-                options.Add(new DiscordSelectComponentOption($"Page {i + 1:N0}: {Pages[i].Title?.Split('.').Last()}".Truncate(100), $"{Id}-{i.ToString(CultureInfo.InvariantCulture)}", Pages[i].Description.Truncate(100), i == CurrentPage,  Pages[i].Emoji != null ? new(Pages[i].Emoji) : null));
+                options.Add(new DiscordSelectComponentOption($"Page {i + 1:N0}: {Pages[i].Title?.Split('.').Last()}".Truncate(100), $"{Id}-{i.ToString(CultureInfo.InvariantCulture)}", Pages[i].Description.Truncate(100), i == CurrentPage, Pages[i].Emoji != null ? new(Pages[i].Emoji) : null));
             }
 
             if (CurrentPage != 0)

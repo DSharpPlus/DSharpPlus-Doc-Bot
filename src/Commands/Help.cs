@@ -20,7 +20,7 @@ namespace DSharpPlus.DocBot.Commands
         public Task HelpAsync(CommandContext context, [RemainingText, Description("Which command to get more specific information on. If not specified, lists all commands.")] string? searchCommand = null)
         {
             List<Page> pages = new();
-            if (searchCommand == null || (!context.CommandsNext.RegisteredCommands.TryGetValue(searchCommand, out Command? command) && command == null))
+            if (searchCommand == null || !context.CommandsNext.RegisteredCommands.TryGetValue(searchCommand, out Command? command))
             {
                 pages.AddRange(ListCommands(context, context.CommandsNext.RegisteredCommands.Values));
             }
