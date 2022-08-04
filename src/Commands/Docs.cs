@@ -15,7 +15,7 @@ namespace DSharpPlus.DocBot.Commands
 
         [Command("docs")]
         [Description("Searches the documentation for a given type.")]
-        public async Task DocsAsync(CommandContext context, [Description("The type to search for.")] string searchRequest)
+        public async Task DocsAsync(CommandContext context, [Description("The type to search for."), RemainingText] string searchRequest)
         {
             IEnumerable<Page> pages = DocumentationService.Search(searchRequest);
             int pageCount = pages.Count();
