@@ -91,14 +91,14 @@ namespace DSharpPlus.DocBot.Types
 
         public int GetPreviousSection()
         {
-            CurrentPage = CurrentPage - 24 < 0 ? 0 : CurrentPage - 24;
+            CurrentPage = CurrentPage - 23 < 0 ? 0 : CurrentPage - 23;
             LastUpdatedAt = DateTimeOffset.UtcNow;
             return CurrentPage;
         }
 
         public int GetNextSection()
         {
-            CurrentPage = CurrentPage + 24 > Pages.Length - 1 ? Pages.Length - 1 : CurrentPage + 24;
+            CurrentPage = CurrentPage + 23 > Pages.Length - 1 ? Pages.Length - 1 : CurrentPage + 23;
             LastUpdatedAt = DateTimeOffset.UtcNow;
             return CurrentPage;
         }
@@ -116,12 +116,11 @@ namespace DSharpPlus.DocBot.Types
             }
 
             List<DiscordSelectComponentOption> options = new();
-            int pageSelection = Math.Min(23, Pages.Length - 1 - CurrentPage);
-            Page[] pages = Pages.Skip(CurrentPage).Take(pageSelection).ToArray();
-            for (int i = 0; i < pages.Length; i++)
+            int pageSelection = Math.Min(23, Pages.Length - CurrentPage);
+            int endIndex = CurrentPage + pageSelection;
+            for (int i = CurrentPage; i < endIndex; i++)
             {
-                int pageIndex = i + CurrentPage;
-                options.Add(new DiscordSelectComponentOption($"Page {pageIndex + 1:N0}: {Pages[pageIndex].Title?.Split('.').Last()}".Truncate(100), $"{Id}-{pageIndex.ToString(CultureInfo.InvariantCulture)}", Pages[pageIndex].Description.Truncate(100), pageIndex == CurrentPage, Pages[pageIndex].Emoji != null ? new(Pages[pageIndex].Emoji) : null));
+                options.Add(new DiscordSelectComponentOption($"Page {i + 1:N0}: {Pages[i].Title?.Split('.').Last()}".Truncate(100), $"{Id}-{i.ToString(CultureInfo.InvariantCulture)}", Pages[i].Description.Truncate(100), i == CurrentPage,  Pages[i].Emoji != null ? new(Pages[i].Emoji) : null));
             }
 
             if (CurrentPage != 0)
