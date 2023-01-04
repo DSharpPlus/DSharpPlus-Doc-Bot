@@ -1,18 +1,19 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
-    <PropertyGroup>
-        <TargetFramework>net6.0</TargetFramework>
-        <DebugType>portable</DebugType>
-        <AssemblyName>DSharpPlusDocs</AssemblyName>
-        <OutputType>Exe</OutputType>
-    </PropertyGroup>
-    <ItemGroup>
-        <PackageReference Include="DSharpPlus" Version="4.3.0-nightly-01134" />
-        <PackageReference Include="DSharpPlus.CommandsNext" Version="4.3.0-nightly-01134" />
-        <PackageReference Include="DSharpPlus.Interactivity" Version="4.3.0-nightly-01134" />
-        <PackageReference Include="DSharpPlus.Rest" Version="4.3.0-nightly-01134" />
-        <PackageReference Include="DSharpPlus.VoiceNext" Version="4.3.0-nightly-01134" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.2.0" />
-        <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.2.0" />
-        <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="3.1.1" />
-    </ItemGroup>
+  <PropertyGroup>
+    <TargetFramework>net7.0</TargetFramework>
+    <DebugType>portable</DebugType>
+    <AssemblyName>DSharpPlusDocs</AssemblyName>
+    <OutputType>Exe</OutputType>
+  </PropertyGroup>
+  <ItemGroup>
+    <PackageReference Include="DSharpPlus" Version="4.3.0" />
+    <PackageReference Include="DSharpPlus.CommandsNext" Version="4.3.0" />
+    <PackageReference Include="DSharpPlus.Interactivity" Version="4.3.0" />
+    <PackageReference Include="DSharpPlus.Rest" Version="4.3.0" />
+    <PackageReference Include="DSharpPlus.VoiceNext" Version="4.3.0" />
+    <PackageReference Include="DSharpPlus.SlashCommands" Version="4.3.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp" Version="4.4.0" />
+    <PackageReference Include="Microsoft.CodeAnalysis.CSharp.Scripting" Version="4.4.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="5.0.0" />
+  </ItemGroup>
 </Project>
