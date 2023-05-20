@@ -21,10 +21,46 @@
 // OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 // SOFTWARE.
 
+using System;
+using System.Threading.Tasks;
+using DSharpPlus;
+using DSharpPlusDocs.Controllers;
+using Microsoft.Extensions.Logging;
+
 namespace DSharpPlusDocs
 {
-    public class Program
+    public class Program : IDisposable
     {
-        public static void Main() => new DSharpPlusDocs().RunAsync().GetAwaiter().GetResult();
+        private static DiscordClient _client;
+        private static MainHandler _mainHandler;
+
+        public static async Task Main()
+        {
+            _client = new DiscordClient(new DiscordConfiguration
+            {
+                MinimumLogLevel = LogLevel.Debug,
+                MessageCacheSize = 1024,
+                TokenType = TokenType.Bot,
+                Token = Environment.GetEnvironmentVariable("DISCORD_TOKEN")
+            });
+
+            _client.Ready += (client, eventArgs) =>
+            {
+                Console.WriteLine("Connected!");
+                return Task.CompletedTask;
+            };
+
+            _mainHandler = new MainHandler(_client);
+            await _mainHandler.InitializeEarlyAsync();
+
+            await _client.ConnectAsync();
+            await Task.Delay(-1);
+        }
+
+        public void Dispose()
+        {
+            _client.Dispose();
+            GC.SuppressFinalize(this);
+        }
     }
 }

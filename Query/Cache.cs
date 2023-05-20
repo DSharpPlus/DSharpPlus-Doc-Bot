@@ -276,7 +276,7 @@ namespace DSharpPlusDocs.Query
 
             foreach (PropertyInfo pi in _interface.GetRuntimeProperties())
             {
-                if (!allTypes[parent].Properties.Contains(pi) && !allTypes[parent].Properties.Any(x => x.Name == pi.Name))
+                if (!allTypes[parent].Properties.Contains(pi) && allTypes[parent].Properties.All(x => x.Name != pi.Name))
                 {
                     allTypes[parent].Properties.Add(pi);
                 }

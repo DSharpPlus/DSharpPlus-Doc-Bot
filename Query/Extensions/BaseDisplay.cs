@@ -114,15 +114,14 @@ namespace DSharpPlusDocs.Query
         {
             bool useParent = !IsInherited(o);
             Regex rgx = new("\\W+");
-            return o is TypeInfoWrapper type
-                ? rgx.Replace($"{type.TypeInfo.Namespace}_{type.TypeInfo.Name}", "_")
-                : o is MethodInfoWrapper method
-                ? rgx.Replace($"{(useParent ? method.Parent.TypeInfo.Namespace : method.Method.DeclaringType.Namespace)}_{(useParent ? method.Parent.TypeInfo.Name : method.Method.DeclaringType.Name)}_{method.Method.Name}", "_")
-                : o is PropertyInfoWrapper property
-                ? rgx.Replace($"{(useParent ? property.Parent.TypeInfo.Namespace : property.Property.DeclaringType.Namespace)}_{(useParent ? property.Parent.TypeInfo.Name : property.Property.DeclaringType.Name)}_{property.Property.Name}", "_")
-                : o is EventInfoWrapper eve
-                ? rgx.Replace($"{eve.Parent.TypeInfo.Namespace}_{eve.Parent.TypeInfo.Name}_{eve.Event.Name}".Replace('.', '_'), "_")
-                : rgx.Replace($"{o.GetType().Namespace}_{o.GetType().Name}".Replace('.', '_'), "_");
+            return o switch
+            {
+                TypeInfoWrapper type => rgx.Replace($"{type.TypeInfo.Namespace}_{type.TypeInfo.Name}", "_"),
+                MethodInfoWrapper method => rgx.Replace($"{(useParent ? method.Parent.TypeInfo.Namespace : method.Method.DeclaringType.Namespace)}_{(useParent ? method.Parent.TypeInfo.Name : method.Method.DeclaringType.Name)}_{method.Method.Name}", "_"),
+                PropertyInfoWrapper property => rgx.Replace($"{(useParent ? property.Parent.TypeInfo.Namespace : property.Property.DeclaringType.Namespace)}_{(useParent ? property.Parent.TypeInfo.Name : property.Property.DeclaringType.Name)}_{property.Property.Name}", "_"),
+                EventInfoWrapper eve => rgx.Replace($"{eve.Parent.TypeInfo.Namespace}_{eve.Parent.TypeInfo.Name}_{eve.Event.Name}".Replace('.', '_'), "_"),
+                _ => rgx.Replace($"{o.GetType().Namespace}_{o.GetType().Name}".Replace('.', '_'), "_")
+            };
         }
 
         //Generic types will return like Type`1 and the docs change to Type-1
@@ -151,13 +150,13 @@ namespace DSharpPlusDocs.Query
 
                 return $"{type}: {typeWrapper.DisplayName} in {typeWrapper.TypeInfo.Namespace}";
             }
-            return o is MethodInfoWrapper method
-                ? $"Method: {method.Method.Name} in {method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}{(global::DSharpPlusDocs.Query.ResultDisplay.IsInherited(method) && withInheritanceMarkup ? " (i)" : "")}"
-                : o is PropertyInfoWrapper property
-                ? $"Property: {property.Property.Name} in {property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}{(global::DSharpPlusDocs.Query.ResultDisplay.IsInherited(property) && withInheritanceMarkup ? " (i)" : "")}"
-                : o is EventInfoWrapper eve
-                ? $"Event: {eve.Event.Name} in {eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}"
-                : o.GetType().ToString();
+            return o switch
+            {
+                MethodInfoWrapper method => $"Method: {method.Method.Name} in {method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}{(global::DSharpPlusDocs.Query.ResultDisplay.IsInherited(method) && withInheritanceMarkup ? " (i)" : "")}",
+                PropertyInfoWrapper property => $"Property: {property.Property.Name} in {property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}{(global::DSharpPlusDocs.Query.ResultDisplay.IsInherited(property) && withInheritanceMarkup ? " (i)" : "")}",
+                EventInfoWrapper eve => $"Event: {eve.Event.Name} in {eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}",
+                _ => o.GetType().ToString()
+            };
         }
 
         public static string GetSimplePath(object o)
@@ -176,28 +175,32 @@ namespace DSharpPlusDocs.Query
 
                 return $"{type}:{typeWrapper.DisplayName}";
             }
-            return o is MethodInfoWrapper method
-                ? $"Method:{method.Method.Name}"
-                : o is PropertyInfoWrapper property
-                ? $"Property:{property.Property.Name}"
-                : o is EventInfoWrapper eve ? $"Event:{eve.Event.Name}" : o.GetType().ToString();
+            return o switch
+            {
+                MethodInfoWrapper method => $"Method:{method.Method.Name}",
+                PropertyInfoWrapper property => $"Property:{property.Property.Name}",
+                EventInfoWrapper eve => $"Event:{eve.Event.Name}",
+                _ => o.GetType().ToString()
+            };
         }
 
-        public static string GetNamespace(object o) => o is TypeInfoWrapper typeWrapper
-                ? typeWrapper.TypeInfo.Namespace
-                : o is MethodInfoWrapper method
-                ? $"{method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}"
-                : o is PropertyInfoWrapper property
-                ? $"{property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}"
-                : o is EventInfoWrapper eve ? $"{eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}" : o.GetType().Namespace;
+        public static string GetNamespace(object o) => o switch
+        {
+            TypeInfoWrapper typeWrapper => typeWrapper.TypeInfo.Namespace,
+            MethodInfoWrapper method => $"{method.Parent.TypeInfo.Namespace}.{method.Parent.DisplayName}",
+            PropertyInfoWrapper property => $"{property.Parent.TypeInfo.Namespace}.{property.Parent.DisplayName}",
+            EventInfoWrapper eve => $"{eve.Parent.TypeInfo.Namespace}.{eve.Parent.DisplayName}",
+            _ => o.GetType().Namespace
+        };
 
-        public static string GetParent(object o) => o is TypeInfoWrapper typeWrapper
-                ? typeWrapper.DisplayName
-                : o is MethodInfoWrapper method
-                ? method.Parent.DisplayName
-                : o is PropertyInfoWrapper property
-                ? property.Parent.DisplayName
-                : o is EventInfoWrapper eve ? eve.Parent.DisplayName : o.GetType().Name;
+        public static string GetParent(object o) => o switch
+        {
+            TypeInfoWrapper typeWrapper => typeWrapper.DisplayName,
+            MethodInfoWrapper method => method.Parent.DisplayName,
+            PropertyInfoWrapper property => property.Parent.DisplayName,
+            EventInfoWrapper eve => eve.Parent.DisplayName,
+            _ => o.GetType().Name
+        };
 
         private static string StripTags(string source)
         {

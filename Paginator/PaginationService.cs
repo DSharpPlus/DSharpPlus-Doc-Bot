@@ -69,7 +69,7 @@ namespace DSharpPlusDocs.Paginator
 
             if (paginated.Options.Timeout != TimeSpan.Zero)
             {
-                _ = Task.Delay(paginated.Options.Timeout).ContinueWith(async _t =>
+                _ = Task.Delay(paginated.Options.Timeout).ContinueWith(async _ =>
                 {
                     if (!_messages.ContainsKey(message.Id))
                     {
@@ -120,7 +120,7 @@ namespace DSharpPlusDocs.Paginator
 
             if (paginated.Options.Timeout != TimeSpan.Zero)
             {
-                _ = Task.Delay(paginated.Options.Timeout).ContinueWith(async _t =>
+                _ = Task.Delay(paginated.Options.Timeout).ContinueWith(async _ =>
                 {
                     if (!_messages.ContainsKey(message.Id))
                     {
@@ -168,6 +168,7 @@ namespace DSharpPlusDocs.Paginator
                     _ = message.DeleteReactionAsync(e.Emoji, e.User);
                     return;
                 }
+
                 if (e.Emoji.Equals(page.Options.EmoteFirst))
                 {
                     if (page.CurrentPage != 1)
@@ -212,6 +213,7 @@ namespace DSharpPlusDocs.Paginator
                         await message.DeleteAllReactionsAsync();
                     }
                 }
+
                 _ = message.DeleteReactionAsync(e.Emoji, e.User);
             }
         }
@@ -219,11 +221,14 @@ namespace DSharpPlusDocs.Paginator
 
     public class PaginatedMessage
     {
-        public PaginatedMessage(IEnumerable<string> pages, string title = "", int embedColor = 0, DiscordUser user = null, AppearanceOptions options = null)
+        public PaginatedMessage(IEnumerable<string> pages, string title = "", int embedColor = 0,
+            DiscordUser user = null, AppearanceOptions options = null)
             : this(pages.Select(x => new Page { Description = x }), title, embedColor, user, options)
         {
         }
-        public PaginatedMessage(IEnumerable<Page> pages, string title = "", int embedColor = 0, DiscordUser user = null, AppearanceOptions options = null)
+
+        public PaginatedMessage(IEnumerable<Page> pages, string title = "", int embedColor = 0, DiscordUser user = null,
+            AppearanceOptions options = null)
         {
             List<DiscordEmbed> embeds = new();
             int i = 1;
@@ -249,6 +254,7 @@ namespace DSharpPlusDocs.Paginator
 
                 embeds.Add(builder);
             }
+
             Pages = embeds;
             Title = title;
             EmbedColor = embedColor;

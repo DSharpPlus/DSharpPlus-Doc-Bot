@@ -86,7 +86,7 @@ namespace DSharpPlusDocs.Modules
                 string html;
                 using (HttpClient httpClient = new())
                 {
-                    HttpResponseMessage res = await httpClient.GetAsync("https://raw.githubusercontent.com/NaamloosDT/DSharpPlus/master/docs/articles/toc.yml");
+                    HttpResponseMessage res = await httpClient.GetAsync("https://raw.githubusercontent.com/DSharpPlus/DSharpPlus/master/docs/articles/toc.yml");
                     if (!res.IsSuccessStatusCode)
                     {
                         throw new Exception($"An error occurred: {res.ReasonPhrase}");
@@ -154,9 +154,9 @@ namespace DSharpPlusDocs.Modules
                     foreach (string category in guides.Keys)
                     {
                         authorName = $"Guide: {category}";
-                        if (guides.ContainsKey(category))
+                        if (guides.TryGetValue(category, out string guide1))
                         {
-                            authorUrl = guides[category];
+                            authorUrl = guide1;
                         }
 
                         bool add = false;

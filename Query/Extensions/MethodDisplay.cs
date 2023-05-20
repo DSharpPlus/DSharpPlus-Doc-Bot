@@ -84,7 +84,6 @@ namespace DSharpPlusDocs.Query
 
             Regex rgx = new("[^a-zA-Z0-9_][^a-zA-Z]*");
             string parameters = "";
-            string parameters_orig = "";
             foreach (ParameterInfo pi in mi.Method.GetParameters())
             {
                 string format = rgx.Replace(pi.ParameterType.ToString(), "_").Replace("System_Action", "Action").Replace("System_Collections_Generic_IEnumerable", "IEnumerable");
@@ -94,7 +93,6 @@ namespace DSharpPlusDocs.Query
                 }
 
                 parameters += $"{format}_";
-                parameters_orig += $"{pi.ParameterType}_";
             }
             string final = $"#{mi.Parent.TypeInfo.Namespace.Replace('.', '_')}_{mi.Parent.TypeInfo.Name}_{mi.Method.Name}_{parameters}";
             return final.Length > 68 && !removeDiscord ? MethodToDocs(mi, true) : final;
@@ -103,9 +101,8 @@ namespace DSharpPlusDocs.Query
         private static string BuildMethod(MethodInfoWrapper methodWrapper)
         {
             MethodInfo mi = methodWrapper.Method;
-            IEnumerable<string> parameters = null;
             ParameterInfo[] parametersInfo = mi.GetParameters();
-            parameters = mi.IsDefined(typeof(ExtensionAttribute)) && parametersInfo.First().ParameterType.IsAssignableFrom(methodWrapper.Parent.TypeInfo.AsType())
+            IEnumerable<string> parameters = mi.IsDefined(typeof(ExtensionAttribute)) && parametersInfo.First().ParameterType.IsAssignableFrom(methodWrapper.Parent.TypeInfo.AsType())
                 ? parametersInfo.Skip(1).Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}")
                 : parametersInfo.Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
             return $"{Utils.BuildType(mi.ReturnType)} {mi.Name}({string.Join(", ", parameters)})";

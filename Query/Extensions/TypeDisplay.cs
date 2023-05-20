@@ -59,12 +59,12 @@ namespace DSharpPlusDocs.Query
 
             if (result.Summary != null)
             {
-                eb.AddField("Summary:", result.Summary, false);
+                eb.AddField("Summary:", result.Summary);
             }
 
             if (result.Example != null)
             {
-                eb.AddField("Example:", result.Example, false);
+                eb.AddField("Example:", result.Example);
             }
 
             CacheBag cb = _cache.GetCacheBag(first);

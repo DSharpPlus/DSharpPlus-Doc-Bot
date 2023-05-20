@@ -43,7 +43,7 @@ namespace DSharpPlusDocs.Handlers
         private DiscordClient _client;
         private MainHandler _mainHandler;
         private IServiceProvider _services;
-        private readonly MemoryCache cache = new(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
+        private readonly MemoryCache _cache = new(new MemoryCacheOptions { ExpirationScanFrequency = TimeSpan.FromMinutes(3) });
 
         public Task InitializeAsync(MainHandler mainHandler)
         {
@@ -187,9 +187,9 @@ namespace DSharpPlusDocs.Handlers
             }
         }
 
-        public void AddCache(ulong userMessageId, ulong ourMessageId) => cache.Set(userMessageId, ourMessageId, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
+        public void AddCache(ulong userMessageId, ulong ourMessageId) => _cache.Set(userMessageId, ourMessageId, new MemoryCacheEntryOptions { AbsoluteExpirationRelativeToNow = TimeSpan.FromMinutes(10) });
 
-        public ulong? GetOurMessageIdFromCache(ulong messageId) => cache.TryGetValue(messageId, out ulong id) ? id : null;
+        public ulong? GetOurMessageIdFromCache(ulong messageId) => _cache.TryGetValue(messageId, out ulong id) ? id : null;
 
         /*public async Task<DiscordEmbed> HelpEmbedBuilderAsync(CommandContext context, string command = null)
         {
