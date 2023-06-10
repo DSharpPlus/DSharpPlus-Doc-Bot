@@ -4,5 +4,6 @@ services:
   tomoe:
     build: .
     environment:
-      - "DISCORD_TOKEN": ""
+      "DISCORD_TOKEN": ""
+      "GITHUB_TOKEN": ""
     restart: unless-stopped

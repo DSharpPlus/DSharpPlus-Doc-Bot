@@ -48,7 +48,7 @@ namespace DSharpPlusDocs.Paginator
         /// </summary>
         /// <param name="channel">The channel this message should be sent to</param>
         /// <param name="paginated">A <see cref="PaginatedMessage">PaginatedMessage</see> containing the pages.</param>
-        /// <exception cref="Net.HttpException">Thrown if the bot user cannot send a message or add reactions.</exception>
+        /// <exception cref="System.Web.HttpException">Thrown if the bot user cannot send a message or add reactions.</exception>
         /// <returns>The paginated message.</returns>
         public async Task<DiscordMessage> SendPaginatedMessageAsync(DiscordChannel channel, PaginatedMessage paginated)
         {

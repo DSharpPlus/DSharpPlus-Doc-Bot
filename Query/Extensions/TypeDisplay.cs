@@ -49,7 +49,7 @@ namespace DSharpPlusDocs.Query
                 Console.WriteLine(e.ToString());
                 result = new DocsHttpResult($"{QueryHandler.DocsBaseUrl}api/{pageUrl}.html");
             }
-            eb.WithAuthor($"{(first.TypeInfo.IsInterface ? "Interface" : (first.TypeInfo.IsEnum ? "Enum" : "Type"))}: {first.TypeInfo.Namespace}.{first.DisplayName}", result.Url, "http://i.imgur.com/yYiUhdi.png");
+            eb.WithAuthor($"{(first.TypeInfo.IsInterface ? "Interface" : first.TypeInfo.IsEnum ? "Enum" : "Type")}: {first.TypeInfo.Namespace}.{first.DisplayName}", result.Url, "http://i.imgur.com/yYiUhdi.png");
             eb.AddField("Docs:", FormatDocsUrl(result.Url), true);
             string githubUrl = await GithubRest.GetTypeUrlAsync(first);
             if (githubUrl != null)

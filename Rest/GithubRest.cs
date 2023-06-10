@@ -38,22 +38,28 @@ namespace DSharpPlusDocs.Rest
         private const string ApiUrl = "https://api.github.com";
         private const string AcceptHeader = "application/vnd.github.v3+json";
 
-        private static async Task<JObject> SendRequestAsync(HttpMethod method, string endpoint, string extra = null)
+        private static async Task<JObject> SendRequestAsync(HttpMethod method, string endpoint, string extra = null, string acceptHeader = null)
         {
             using HttpClient http = new();
             HttpRequestMessage request = new(method, $"{ApiUrl}{endpoint}{extra}");
-            request.Headers.Add("Accept", AcceptHeader);
+            if (acceptHeader == null)
+            {
+                acceptHeader = "application/vnd.github.v3+json";
+            }
+
+            request.Headers.Add("Accept", acceptHeader);
             request.Headers.Add("User-Agent", "DSharpPlus Docs Bot/1.0");
+            request.Headers.Add("Authorization", $"Bearer {Environment.GetEnvironmentVariable("GITHUB_TOKEN")}");
             HttpResponseMessage response = await http.SendAsync(request);
             return response.IsSuccessStatusCode
                 ? JObject.Parse(await response.Content.ReadAsStringAsync())
                 : throw new InvalidOperationException($"{response.ReasonPhrase}: {await response.Content.ReadAsStringAsync()}");
         }
 
-        public static async Task<List<GitSearchResult>> SearchAsync(string search, string filename = null)
+        private static async Task<List<GitSearchResult>> SearchAsync(string search, string filename = null)
         {
-            string extra = $"?q=repo:DSharpPlus/DSharpPlus+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100";
-            JObject result = await SendRequestAsync(HttpMethod.Get, "/search/code", extra);
+            string extra = $"?q={search.Replace(' ', '+')}+repo:DSharpPlus/DSharpPlus+language:c#+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100";
+            JObject result = await SendRequestAsync(HttpMethod.Get, "/search/code", extra, "application/vnd.github+json");
             JArray items = (JArray)result["items"];
             List<GitSearchResult> list = new();
             foreach (JToken item in items)
@@ -67,7 +73,7 @@ namespace DSharpPlusDocs.Rest
                 int pages = (int)Math.Floor(totalCount / 100f);
                 for (int i = 2; i <= pages + 1; i++)
                 {
-                    extra = $"?q=repo:DSharpPlus/DSharpPlus+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100&page={i}";
+                    extra = $"?q={search.Replace(' ', '+')}+repo:DSharpPlus/DSharpPlus+?q=repo:DSharpPlus/DSharpPlus+language:cs+in:file{(filename == null ? "" : $"+filename:{filename}")}+{search.Replace(' ', '+')}&per_page=100&page={i}";
                     result = await SendRequestAsync(HttpMethod.Get, "/search/code", extra);
                     items = (JArray)result["items"];
                     foreach (JToken item in items)
@@ -76,6 +82,7 @@ namespace DSharpPlusDocs.Rest
                     }
                 }
             }
+
             return list;
         }
 

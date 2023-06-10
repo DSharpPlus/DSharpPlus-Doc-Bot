@@ -29,7 +29,7 @@ using Microsoft.Extensions.Logging;
 
 namespace DSharpPlusDocs
 {
-    public class Program : IDisposable
+    public abstract class Program : IDisposable
     {
         private static DiscordClient _client;
         private static MainHandler _mainHandler;
@@ -46,7 +46,7 @@ namespace DSharpPlusDocs
 
             _client.Ready += (client, eventArgs) =>
             {
-                Console.WriteLine("Connected!");
+                _client.Logger.LogInformation("Connected!");
                 return Task.CompletedTask;
             };
 

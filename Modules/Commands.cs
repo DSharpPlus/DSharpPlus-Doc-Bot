@@ -51,14 +51,12 @@ namespace DSharpPlusDocs.Modules
         [Description("Delete all the messages from this bot within the last X messages")]
         public async Task CleanAsync(CommandContext ctx, int messages = 30)
         {
-            if (messages > 50)
+            messages = messages switch
             {
-                messages = 50;
-            }
-            else if (messages < 2)
-            {
-                messages = 2;
-            }
+                > 50 => 50,
+                < 2 => 2,
+                _ => messages
+            };
 
             IEnumerable<DiscordMessage> msgs = await ctx.Channel.GetMessagesAsync(messages);
             msgs = msgs.Where(x => x.Author.Id == ctx.Client.CurrentUser.Id);

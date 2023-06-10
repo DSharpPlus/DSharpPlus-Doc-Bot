@@ -235,7 +235,7 @@ namespace DSharpPlusDocs.Query
                 IEnumerable<PropertyInfo> rt = type.GetRuntimeProperties();
                 foreach (PropertyInfo pi in type.GetRuntimeProperties())
                 {
-                    if ((pi.GetMethod.IsFamily || pi.GetMethod.IsPublic) && !cb.Properties.Any(x => x.Name == pi.Name))
+                    if ((pi.GetMethod.IsFamily || pi.GetMethod.IsPublic) && cb.Properties.All(x => x.Name != pi.Name))
                     {
                         cb.Properties.Add(pi);
                     }
