@@ -67,7 +67,7 @@ namespace DSharpPlusDocs.Query
 
         private async Task<DiscordEmbedBuilder> ShowMultipleAsync(IEnumerable<IEnumerable<object>> obj)
         {
-            DiscordEmbedBuilder eb = new();
+            DiscordEmbedBuilder eb;
             IEnumerable<object> singleList = obj.Select(x => x.First());
             IEnumerable<IGrouping<string, object>> same = singleList.GroupBy(x => GetSimplePath(x));
             if (same.Count() == 1)

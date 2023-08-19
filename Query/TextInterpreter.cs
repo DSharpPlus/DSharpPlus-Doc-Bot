@@ -27,7 +27,7 @@ using DSharpPlusDocs.Query.Results;
 
 namespace DSharpPlusDocs.Query
 {
-    public class TextInterpreter
+    public partial class TextInterpreter
     {
         private static readonly Regex rgx = new("[^0-9a-z_ ]", RegexOptions.Compiled | RegexOptions.IgnoreCase | RegexOptions.ECMAScript);
 
@@ -61,7 +61,7 @@ namespace DSharpPlusDocs.Query
                     searchEvents = false;
                 }
 
-                Regex rgx = new("( property | method | type | event )", RegexOptions.IgnoreCase);
+                Regex rgx = TypeRegex();
                 _text = rgx.Replace(_text, " ");
             }
             if (_text.IndexOf(" list ", StringComparison.OrdinalIgnoreCase) != -1)
@@ -112,5 +112,8 @@ namespace DSharpPlusDocs.Query
                 ? new InterpreterResult("No text to search.")
                 : new InterpreterResult(_text, nspace, search, searchTypes, searchMethods, searchProperties, searchEvents, isList);
         }
+
+        [GeneratedRegex("( property | method | type | event )", RegexOptions.IgnoreCase, "ru-RU")]
+        private static partial Regex TypeRegex();
     }
 }

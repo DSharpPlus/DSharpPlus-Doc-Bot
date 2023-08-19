@@ -44,7 +44,7 @@ namespace DSharpPlusDocs.Query
             string html = result.Item2;
             if (result.Item1 && !string.IsNullOrEmpty(html))
             {
-                string block = (o is TypeInfoWrapper) ? html[html.IndexOf($"<h1 id=\"{search}")..] : html[html.IndexOf($"<h4 id=\"{search}")..];
+                string block = o is TypeInfoWrapper ? html[html.IndexOf($"<h1 id=\"{search}")..] : html[html.IndexOf($"<h4 id=\"{search}")..];
                 string anchor = block[(block.IndexOf('"') + 1)..];
                 anchor = anchor[..anchor.IndexOf('"')];
                 summary = block[(block.IndexOf("summary\">") + 9)..];
@@ -89,9 +89,9 @@ namespace DSharpPlusDocs.Query
                     }
                 }
             }
-            using (HttpClient httpClient = new()
-            { Timeout = TimeSpan.FromSeconds(6) })
+            using (HttpClient httpClient = new())
             {
+                httpClient.Timeout = TimeSpan.FromSeconds(6);
                 HttpResponseMessage res = await httpClient.GetAsync(url);
                 if (!res.IsSuccessStatusCode)
                 {
@@ -236,7 +236,7 @@ namespace DSharpPlusDocs.Query
         {
             int idx = url.IndexOf('#');
             string[] arr = idx == -1 ? url[..].Split('.') : url[..idx].Split('.');
-            return $"[{arr.ElementAt(arr.Length - 2)}.html]({url})";
+            return $"[{arr[^2]}.html]({url})";
         }
     }
 }

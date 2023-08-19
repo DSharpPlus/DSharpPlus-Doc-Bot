@@ -102,7 +102,7 @@ namespace DSharpPlusDocs.Query
         {
             MethodInfo mi = methodWrapper.Method;
             ParameterInfo[] parametersInfo = mi.GetParameters();
-            IEnumerable<string> parameters = mi.IsDefined(typeof(ExtensionAttribute)) && parametersInfo.First().ParameterType.IsAssignableFrom(methodWrapper.Parent.TypeInfo.AsType())
+            IEnumerable<string> parameters = mi.IsDefined(typeof(ExtensionAttribute)) && parametersInfo[0].ParameterType.IsAssignableFrom(methodWrapper.Parent.TypeInfo.AsType())
                 ? parametersInfo.Skip(1).Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}")
                 : parametersInfo.Select(x => $"{BuildPreParameter(x)}{Utils.BuildType(x.ParameterType)} {x.Name}{GetParameterDefaultValue(x)}");
             return $"{Utils.BuildType(mi.ReturnType)} {mi.Name}({string.Join(", ", parameters)})";

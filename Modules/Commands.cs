@@ -280,7 +280,7 @@ namespace DSharpPlusDocs.Modules
         [RequireOwner]
         public async Task SetDocsUrlAsync(CommandContext ctx, [RemainingText] string url)
         {
-            if (!url.EndsWith("/"))
+            if (!url.EndsWith('/'))
             {
                 url += "/";
             }

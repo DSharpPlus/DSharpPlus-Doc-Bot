@@ -36,16 +36,11 @@ namespace DSharpPlusDocs.Rest
     public class GithubRest
     {
         private const string ApiUrl = "https://api.github.com";
-        private const string AcceptHeader = "application/vnd.github.v3+json";
-
         private static async Task<JObject> SendRequestAsync(HttpMethod method, string endpoint, string extra = null, string acceptHeader = null)
         {
             using HttpClient http = new();
             HttpRequestMessage request = new(method, $"{ApiUrl}{endpoint}{extra}");
-            if (acceptHeader == null)
-            {
-                acceptHeader = "application/vnd.github.v3+json";
-            }
+            acceptHeader ??= "application/vnd.github.v3+json";
 
             request.Headers.Add("Accept", acceptHeader);
             request.Headers.Add("User-Agent", "DSharpPlus Docs Bot/1.0");
@@ -89,20 +84,20 @@ namespace DSharpPlusDocs.Rest
         public static async Task<string> GetTypeUrlAsync(TypeInfoWrapper type)
         {
             List<GitSearchResult> search = await SearchAsync(type.Name, $"{type.Name}.cs");
-            return search.FirstOrDefault(x => x.Name == $"{type.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl ?? null; //null = Not found
+            return search.Find(x => x.Name == $"{type.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl ?? null; //null = Not found
         }
 
         public static async Task<string> GetEventUrlAsync(EventInfoWrapper ev)
         {
             List<GitSearchResult> search = await SearchAsync(ev.Parent.Name, $"{ev.Parent.Name}.cs");
-            string result = search.FirstOrDefault(x => x.Name == $"{ev.Parent.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
+            string result = search.Find(x => x.Name == $"{ev.Parent.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
             if (result != null)
             {
                 using HttpClient client = new();
                 string url = result.Replace("/blob/", "/raw/");
                 string code = await client.GetStringAsync(url);
                 Microsoft.CodeAnalysis.SyntaxTree tree = CSharpSyntaxTree.ParseText(code);
-                CompilationUnitSyntax root = (CompilationUnitSyntax)tree.GetRoot();
+                CompilationUnitSyntax root = (CompilationUnitSyntax)await tree.GetRootAsync();
                 EventDeclarationSyntax source = root.DescendantNodes().OfType<EventDeclarationSyntax>().FirstOrDefault(x => x.Identifier.ValueText == ev.Event.Name);
                 if (source == null)
                 {
@@ -119,14 +114,14 @@ namespace DSharpPlusDocs.Rest
         public static async Task<string> GetMethodUrlAsync(MethodInfoWrapper method)
         {
             List<GitSearchResult> search = await SearchAsync(method.Method.Name, $"{method.Parent.Name}.cs");
-            string result = search.FirstOrDefault(x => x.Name == $"{method.Parent.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
+            string result = search.Find(x => x.Name == $"{method.Parent.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
             if (result != null)
             {
                 using HttpClient client = new();
                 string url = result.Replace("/blob/", "/raw/");
                 string code = await client.GetStringAsync(url);
                 Microsoft.CodeAnalysis.SyntaxTree tree = CSharpSyntaxTree.ParseText(code);
-                CompilationUnitSyntax root = (CompilationUnitSyntax)tree.GetRoot();
+                CompilationUnitSyntax root = (CompilationUnitSyntax)await tree.GetRootAsync();
                 MethodDeclarationSyntax source = root.DescendantNodes().OfType<MethodDeclarationSyntax>().FirstOrDefault(x => x.Identifier.ValueText == method.Method.Name);
                 if (source == null)
                 {
@@ -143,14 +138,14 @@ namespace DSharpPlusDocs.Rest
         public static async Task<string> GetPropertyUrlAsync(PropertyInfoWrapper property)
         {
             List<GitSearchResult> search = await SearchAsync(property.Property.Name, $"{property.Parent.Name}.cs");
-            string result = search.FirstOrDefault(x => x.Name == $"{property.Parent.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
+            string result = search.Find(x => x.Name == $"{property.Parent.Name}.cs")?.HtmlUrl ?? search.FirstOrDefault()?.HtmlUrl;
             if (result != null)
             {
                 using HttpClient client = new();
                 string url = result.Replace("/blob/", "/raw/");
                 string code = await client.GetStringAsync(url);
                 Microsoft.CodeAnalysis.SyntaxTree tree = CSharpSyntaxTree.ParseText(code);
-                CompilationUnitSyntax root = (CompilationUnitSyntax)tree.GetRoot();
+                CompilationUnitSyntax root = (CompilationUnitSyntax)await tree.GetRootAsync();
                 PropertyDeclarationSyntax source = root.DescendantNodes().OfType<PropertyDeclarationSyntax>().FirstOrDefault(x => x.Identifier.ValueText == property.Property.Name);
                 if (source == null)
                 {
